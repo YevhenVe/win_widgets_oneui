@@ -32,6 +32,8 @@ public sealed class AppSettings
     public string? City { get; set; }
     public bool Fahrenheit { get; set; }
     public BlurMode Blur { get; set; } = BlurMode.Blur;
+    public int BlurAmount { get; set; } = 35; // 0..100
+    public bool WidgetShadow { get; set; } = true;
     public Theme Theme { get; set; } = Theme.Auto;
     public WeatherSnapshot? LastWeather { get; set; }
 }

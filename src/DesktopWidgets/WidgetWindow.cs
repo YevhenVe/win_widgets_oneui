@@ -18,6 +18,7 @@ public abstract class WidgetWindow : Window
 {
     public const double PillHeight = 112;
     public const double PillWidth = 260; // every widget has the same footprint
+    private const double ShadowMargin = 22; // transparent room around the pill for its drop shadow
     private const double MinScale = 0.5;
     private const double MaxScale = 3.0;
 
@@ -60,8 +61,14 @@ public abstract class WidgetWindow : Window
         _pill.Padding = new Thickness(20, 0, 36, 0);
         _pill.Background = GlassTint;
 
-        Content = new Grid { LayoutTransform = _scale, Children = { _frostLayer, _pill } };
+        // The margin sits inside the scale transform so the shadow room grows with the widget.
+        Content = new Grid
+        {
+            LayoutTransform = _scale,
+            Children = { new Grid { Margin = new Thickness(ShadowMargin), Children = { _frostLayer, _pill } } },
+        };
         ApplyScale(config.Scale);
+        ApplyShadow();
 
         _saveTimer.Tick += (_, _) =>
         {
@@ -104,6 +111,11 @@ public abstract class WidgetWindow : Window
     protected static Effect GlyphShadow() =>
         new DropShadowEffect { BlurRadius = 10, ShadowDepth = 1.5, Opacity = 0.18, Direction = 270 };
 
+    /// <summary>Soft shadow under the whole pill, toggled from the tray menu.</summary>
+    public void ApplyShadow() => _frostLayer.Effect = SettingsStore.Current.WidgetShadow
+        ? new DropShadowEffect { BlurRadius = 20, ShadowDepth = 4, Opacity = 0.28, Direction = 270 }
+        : null;
+
     /// <summary>Left click that did not turn into a drag.</summary>
     protected virtual void OnClick() { }
 
@@ -133,7 +145,7 @@ public abstract class WidgetWindow : Window
         BackdropUpdates++;
 
         var luminance = 0.5;
-        if (SettingsStore.Current.Blur == BlurMode.Blur && Backdrop.Image is { } image && Native.GetWindowRect(_hwnd, out var rect))
+        if (SettingsStore.Current.Blur == BlurMode.Blur && Backdrop.Image is { } image && PillScreenRect() is { } rect)
         {
             var area = Backdrop.Map(rect);
             _frost.ImageSource = image;
@@ -155,6 +167,22 @@ public abstract class WidgetWindow : Window
             _ => luminance > 0.5,
         };
         Foreground = dark ? DarkText : LightText;
+    }
+
+    /// <summary>The pill's bounds in physical screen pixels (the window itself is larger because of the shadow room).</summary>
+    private Native.RECT? PillScreenRect()
+    {
+        if (_frostLayer.ActualWidth <= 0 || PresentationSource.FromVisual(_frostLayer) is null)
+            return null;
+        var topLeft = _frostLayer.PointToScreen(new Point(0, 0));
+        var bottomRight = _frostLayer.PointToScreen(new Point(_frostLayer.ActualWidth, _frostLayer.ActualHeight));
+        return new Native.RECT
+        {
+            Left = (int)Math.Round(topLeft.X),
+            Top = (int)Math.Round(topLeft.Y),
+            Right = (int)Math.Round(bottomRight.X),
+            Bottom = (int)Math.Round(bottomRight.Y),
+        };
     }
 
     private static readonly Brush GlassTint = Frozen(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF));

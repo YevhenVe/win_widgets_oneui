@@ -98,6 +98,21 @@ public partial class App : Application
             w.UpdateBackdrop();
     }
 
+    public void SetBlurAmount(int amount)
+    {
+        SettingsStore.Current.BlurAmount = amount;
+        SettingsStore.Save();
+        Backdrop.BlurAmountChanged();
+    }
+
+    public void SetWidgetShadow(bool enabled)
+    {
+        SettingsStore.Current.WidgetShadow = enabled;
+        SettingsStore.Save();
+        foreach (var w in _widgets)
+            w.ApplyShadow();
+    }
+
     public void SetTheme(Theme theme)
     {
         SettingsStore.Current.Theme = theme;

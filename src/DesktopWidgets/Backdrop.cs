@@ -20,12 +20,23 @@ namespace DesktopWidgets;
 internal static class Backdrop
 {
     private const int Downscale = 4;
-    private const double BlurRadius = 14; // in downscaled pixels, i.e. ~56 physical px
-    private const int Padding = 24;
+    private const double MaxBlurRadius = 40; // downscaled px at 100 %, i.e. ~160 physical px
+    private const int Padding = 48;          // must exceed the largest blur radius
+    private const int MaxLoadRetries = 3;
 
-    private static readonly DispatcherTimer Debounce = new() { Interval = TimeSpan.FromMilliseconds(800) };
-    private static readonly DispatcherTimer Poll = new() { Interval = TimeSpan.FromMinutes(2) };
+    private static readonly string ThemesDir =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Themes");
+
+    // Windows rewrites the transcoded copy a moment after the wallpaper switches; wait for it to settle.
+    private static readonly DispatcherTimer Debounce = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    private static readonly DispatcherTimer ReblurTimer = new() { Interval = TimeSpan.FromMilliseconds(120) };
+    private static readonly DispatcherTimer Poll = new() { Interval = TimeSpan.FromSeconds(15) };
+    private static FileSystemWatcher? _watcher;
     private static string _signature = "";
+    private static string _pendingReason = "";
+    private static BitmapSource? _sharp;
+    private static bool _loadFailed;
+    private static int _retries;
     private static Int32Rect _virtual;
     private static byte[] _pixels = Array.Empty<byte>();
     private static int _stride;
@@ -40,29 +51,61 @@ internal static class Backdrop
         Debounce.Tick += (_, _) =>
         {
             Debounce.Stop();
-            Rebuild();
+            Rebuild(_pendingReason);
         };
-        // Slideshow / Spotlight change the wallpaper without always notifying, so also poll cheaply.
+        ReblurTimer.Tick += (_, _) =>
+        {
+            ReblurTimer.Stop();
+            Reblur();
+        };
+
+        // The Settings app, slideshows and Spotlight don't always broadcast a setting change,
+        // but every wallpaper switch rewrites Windows' transcoded copy — watch that.
+        if (Directory.Exists(ThemesDir))
+        {
+            _watcher = new FileSystemWatcher(ThemesDir)
+            {
+                Filter = "Transcoded*",
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size,
+                EnableRaisingEvents = true,
+            };
+            _watcher.Changed += (_, _) => Schedule("file watcher");
+            _watcher.Created += (_, _) => Schedule("file watcher");
+            _watcher.Renamed += (_, _) => Schedule("file watcher");
+        }
+
+        // Last-resort safety net; reading the signature is a few cheap system calls.
         Poll.Tick += (_, _) =>
         {
             if (ReadSignature() != _signature)
-                Rebuild();
+                Rebuild("poll");
         };
         Poll.Start();
         SystemEvents.UserPreferenceChanged += (_, e) =>
         {
             if (e.Category is UserPreferenceCategory.Desktop or UserPreferenceCategory.General)
-                Schedule();
+                Schedule("setting change");
         };
-        SystemEvents.DisplaySettingsChanged += (_, _) => Schedule();
-        Rebuild();
+        SystemEvents.DisplaySettingsChanged += (_, _) => Schedule("display change");
+        Rebuild("startup");
     }
 
-    private static void Schedule() => Application.Current.Dispatcher.InvokeAsync(() =>
+    private static void Schedule(string reason) => Application.Current.Dispatcher.InvokeAsync(() =>
     {
+        _pendingReason = reason;
         Debounce.Stop();
         Debounce.Start();
     });
+
+    /// <summary>Blur strength 0..100 from the settings, as a radius in downscaled pixels.</summary>
+    private static double Radius => Math.Clamp(SettingsStore.Current.BlurAmount, 0, 100) / 100.0 * MaxBlurRadius;
+
+    /// <summary>Re-applies the blur strength without reloading the wallpaper (used by the slider).</summary>
+    public static void BlurAmountChanged()
+    {
+        ReblurTimer.Stop();
+        ReblurTimer.Start();
+    }
 
     /// <summary>Maps a physical screen rectangle to the backdrop image's pixel space.</summary>
     public static Rect Map(Native.RECT r) => new(
@@ -140,8 +183,7 @@ internal static class Backdrop
         if (!string.IsNullOrEmpty(path) && File.Exists(path))
             return path;
         // Windows keeps a copy of what is actually shown; it survives deleted originals and slideshows.
-        var themes = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Themes");
-        foreach (var candidate in new[] { Path.Combine(themes, $"Transcoded_{index:000}"), Path.Combine(themes, "TranscodedWallpaper") })
+        foreach (var candidate in new[] { Path.Combine(ThemesDir, $"Transcoded_{index:000}"), Path.Combine(ThemesDir, "TranscodedWallpaper") })
             if (File.Exists(candidate))
                 return candidate;
         return null;
@@ -155,22 +197,54 @@ internal static class Backdrop
             + $"|{position}|{background}";
     }
 
-    public static void Rebuild()
+    public static void Rebuild(string reason = "manual")
     {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        _loadFailed = false;
         try
         {
             _signature = ReadSignature();
             var (monitors, position, background) = ReadDesktop();
-            Image = Compose(monitors, position, background);
-            _stride = Image.PixelWidth * 4;
-            _pixels = new byte[_stride * Image.PixelHeight];
-            Image.CopyPixels(_pixels, _stride, 0);
+            _sharp = Compose(monitors, position, background);
+            SetImage(Blur(_sharp, Radius));
         }
         catch (Exception ex)
         {
             WidgetWindow.Log("backdrop failed: " + ex);
-            Image = null;
+            _sharp = null;
+            SetImage(null);
+        }
+        WidgetWindow.Log($"backdrop rebuilt in {watch.ElapsedMilliseconds} ms ({reason})");
+
+        // The wallpaper file may still be locked while Windows writes it.
+        if (_loadFailed && _retries++ < MaxLoadRetries)
+            Schedule("retry");
+        else if (!_loadFailed)
+            _retries = 0;
+    }
+
+    private static void Reblur()
+    {
+        if (_sharp is null)
+        {
+            Rebuild("blur change");
+            return;
+        }
+        SetImage(Blur(_sharp, Radius));
+    }
+
+    private static void SetImage(BitmapSource? image)
+    {
+        Image = image;
+        if (image is null)
+        {
             _pixels = Array.Empty<byte>();
+        }
+        else
+        {
+            _stride = image.PixelWidth * 4;
+            _pixels = new byte[_stride * image.PixelHeight];
+            image.CopyPixels(_pixels, _stride, 0);
         }
         Changed?.Invoke();
         MemoryTrim.Schedule();
@@ -216,7 +290,7 @@ internal static class Backdrop
         var sharp = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
         sharp.Render(visual);
         sharp.Freeze();
-        return Blur(sharp);
+        return sharp;
     }
 
     private static void DrawFitted(DrawingContext dc, BitmapSource img, Rect target, WallpaperPosition position)
@@ -270,21 +344,25 @@ internal static class Backdrop
         }
         catch (Exception ex)
         {
+            _loadFailed = true;
             WidgetWindow.Log($"wallpaper load failed {path}: {ex.Message}");
             return null;
         }
     }
 
     /// <summary>Gaussian blur with edge extension, so screen borders don't fade to transparent.</summary>
-    private static BitmapSource Blur(BitmapSource sharp)
+    private static BitmapSource Blur(BitmapSource sharp, double radius)
     {
+        if (radius < 0.5)
+            return sharp;
+
         int w = sharp.PixelWidth, h = sharp.PixelHeight;
         var host = new Grid
         {
             Width = w + Padding * 2,
             Height = h + Padding * 2,
             Background = new ImageBrush(sharp) { Stretch = Stretch.Fill },
-            Effect = new BlurEffect { Radius = BlurRadius, KernelType = KernelType.Gaussian, RenderingBias = RenderingBias.Quality },
+            Effect = new BlurEffect { Radius = radius, KernelType = KernelType.Gaussian, RenderingBias = RenderingBias.Quality },
         };
         host.Children.Add(new System.Windows.Controls.Image
         {

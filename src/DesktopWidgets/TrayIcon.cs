@@ -81,7 +81,11 @@ public sealed class TrayIcon : IDisposable
             item.Click += (_, _) => App.Instance.SetBlur(mode);
             background.Items.Add(item);
         }
+        background.Items.Add(new Separator());
+        background.Items.Add(BlurSlider(settings.BlurAmount));
         _menu.Items.Add(background);
+        Item("Refresh background", () => Backdrop.Rebuild("tray menu"));
+        Item("Widget shadow", () => App.Instance.SetWidgetShadow(!settings.WidgetShadow), settings.WidgetShadow);
 
         var theme = new MenuItem { Header = "Theme" };
         foreach (var (value, label) in new[] { (Theme.Auto, "Auto"), (Theme.Light, "Light (dark text)"), (Theme.Dark, "Dark (white text)") })
@@ -102,6 +106,34 @@ public sealed class TrayIcon : IDisposable
         Item("Start with Windows", () => SetAutostart(!IsAutostart()), IsAutostart());
         _menu.Items.Add(new Separator());
         Item("Exit", () => App.Instance.Shutdown());
+    }
+
+    /// <summary>"Blur amount" slider; the menu stays open while dragging and the widgets update live.</summary>
+    private static MenuItem BlurSlider(int value)
+    {
+        var label = new TextBlock { Text = $"Blur amount: {value}%" };
+        var slider = new Slider
+        {
+            Minimum = 0,
+            Maximum = 100,
+            Value = value,
+            Width = 180,
+            TickFrequency = 5,
+            IsSnapToTickEnabled = true,
+            IsMoveToPointEnabled = true,
+            Margin = new Thickness(0, 4, 0, 0),
+        };
+        slider.ValueChanged += (_, e) =>
+        {
+            label.Text = $"Blur amount: {(int)e.NewValue}%";
+            App.Instance.SetBlurAmount((int)e.NewValue);
+        };
+        return new MenuItem
+        {
+            Header = new StackPanel { Children = { label, slider } },
+            StaysOpenOnClick = true,
+            IsEnabled = SettingsStore.Current.Blur == BlurMode.Blur,
+        };
     }
 
     private void Item(string header, Action action, bool? isChecked = null)

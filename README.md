@@ -8,7 +8,8 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 
 - **Analog clock** with a One UI "cookie" face, plus day and date in your system locale.
 - **Current weather** from [Open-Meteo](https://open-meteo.com/) (no API key needed). Location is detected by IP or set by city name. Click the widget to open the full forecast on weather.com.
-- **Frosted glass look**: the wallpaper behind each widget is blurred, edges are smooth, multiple monitors and every wallpaper fit mode are supported.
+- **Frosted glass look**: the wallpaper behind each widget is blurred with adjustable strength, edges are smooth, multiple monitors and every wallpaper fit mode are supported. New wallpapers are picked up in about a second.
+- **Soft shadow** under the widgets, can be turned off.
 - **Lives on the desktop**: widgets stay below your windows and are hidden from the taskbar and Alt+Tab.
 - **Move and scale**: drag to move, <kbd>Ctrl</kbd> + mouse wheel to resize (50–300 %). Positions and sizes are remembered.
 - **Themes**: Auto (text colour follows the wallpaper brightness), Light (dark text), Dark (white text).
@@ -30,7 +31,7 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 | <kbd>Ctrl</kbd> + wheel over a widget | Resize it |
 | Click the weather widget | Open the forecast on weather.com |
 | Right-click a widget | Refresh weather, set location, scale, lock position, remove widget |
-| Tray icon | Add clock / weather, background, theme, weather location, Fahrenheit, start with Windows, exit |
+| Tray icon | Add clock / weather, background and blur amount, refresh background, widget shadow, theme, weather location, Fahrenheit, start with Windows, exit |
 
 Settings are stored in `%LOCALAPPDATA%\DesktopWidgets\settings.json`.
 
@@ -57,7 +58,7 @@ Don't add `EnableCompressionInSingleFile`: the compressed assemblies get unpacke
 ## How it works
 
 - **C# / .NET 10 / WPF**, no third-party packages; Win32 and shell APIs are called via P/Invoke.
-- **Blur**: Windows 11's own backdrops don't work here (acrylic turns opaque on inactive windows, the legacy accent blur renders black). Since widgets sit directly on the desktop, the app instead reads every monitor's wallpaper through `IDesktopWallpaper`, composes and blurs it once, and paints the matching slice behind each widget (`Backdrop.cs`).
+- **Blur**: Windows 11's own backdrops don't work here (acrylic turns opaque on inactive windows, the legacy accent blur renders black). Since widgets sit directly on the desktop, the app instead reads every monitor's wallpaper through `IDesktopWallpaper`, composes and blurs it once, and paints the matching slice behind each widget (`Backdrop.cs`). A `FileSystemWatcher` on Windows' transcoded wallpaper copy detects wallpaper changes.
 - **Desktop layer**: `WM_WINDOWPOSCHANGING` is intercepted to keep the windows just above `Progman` (`WidgetWindow.cs`).
 - **Small footprint**: software rendering (no Direct3D device), conservative GC, and the working set is trimmed after bursts of work (`MemoryTrim.cs`). The tray icon uses `Shell_NotifyIcon` directly instead of WinForms.
 
