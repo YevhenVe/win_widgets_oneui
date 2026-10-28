@@ -318,7 +318,12 @@ internal static class Backdrop
                 var scale = position == WallpaperPosition.Fit
                     ? Math.Min(target.Width / iw, target.Height / ih)
                     : Math.Max(target.Width / iw, target.Height / ih);
-                dc.DrawImage(img, Centered(target, iw * scale, ih * scale));
+                var fitted = Centered(target, iw * scale, ih * scale);
+                // Windows doesn't center tall images vertically: it crops a third of the overflow
+                // from the top and two thirds from the bottom (wide images are centered as expected).
+                if (fitted.Height > target.Height)
+                    fitted.Y = target.Y + (target.Height - fitted.Height) / 3;
+                dc.DrawImage(img, fitted);
                 break;
         }
     }
