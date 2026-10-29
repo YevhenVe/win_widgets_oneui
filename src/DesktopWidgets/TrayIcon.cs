@@ -27,7 +27,7 @@ public sealed class TrayIcon : IDisposable
     private readonly HwndSource _window;
     private readonly IntPtr _hIcon;
     private readonly int _taskbarCreated = RegisterWindowMessage("TaskbarCreated");
-    private readonly ContextMenu _menu = new() { Placement = PlacementMode.MousePoint };
+    private ContextMenu _menu = new();
 
     public TrayIcon()
     {
@@ -59,6 +59,8 @@ public sealed class TrayIcon : IDisposable
 
     private void ShowMenu()
     {
+        // A closed menu misses theme colour changes (it is outside any visual tree), so start fresh.
+        _menu = new ContextMenu { Placement = PlacementMode.MousePoint };
         BuildMenu();
         _menu.IsOpen = true;
         // Without foreground the menu would not close when clicking elsewhere.

@@ -120,7 +120,10 @@ public partial class App : Application
         SettingsStore.Save();
         ApplyMenuTheme();
         foreach (var w in _widgets)
+        {
+            w.ResetMenu();
             w.UpdateBackdrop();
+        }
     }
 
     public void SetLanguage(Language language)

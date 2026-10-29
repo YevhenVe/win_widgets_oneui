@@ -97,11 +97,21 @@ public abstract class WidgetWindow : Window
         Backdrop.Changed += UpdateBackdrop;
         Closed += (_, _) => Backdrop.Changed -= UpdateBackdrop;
 
-        ContextMenu = new ContextMenu();
-        ContextMenu.Opened += (_, _) => BuildMenu(ContextMenu);
+        ResetMenu();
     }
 
     protected void SetPillContent(UIElement content) => _pill.Child = content;
+
+    /// <summary>
+    /// A closed context menu is outside any visual tree and misses theme colour changes,
+    /// so a fresh one is created whenever the theme switches.
+    /// </summary>
+    public void ResetMenu()
+    {
+        var menu = new ContextMenu();
+        menu.Opened += (_, _) => BuildMenu(menu);
+        ContextMenu = menu;
+    }
 
     protected virtual void AddMenuItems(ContextMenu menu) { }
 
