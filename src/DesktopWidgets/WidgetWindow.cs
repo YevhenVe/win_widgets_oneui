@@ -57,9 +57,7 @@ public abstract class WidgetWindow : Window
         _pill.Width = PillWidth;
         _pill.CornerRadius = radius;
         _pill.BorderThickness = new Thickness(1);
-        _pill.BorderBrush = new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
         _pill.Padding = new Thickness(20, 0, 36, 0);
-        _pill.Background = GlassTint;
 
         // The margin sits inside the scale transform so the shadow room grows with the widget.
         Content = new Grid
@@ -101,6 +99,8 @@ public abstract class WidgetWindow : Window
 
         ContextMenu = new ContextMenu();
         ContextMenu.Opened += (_, _) => BuildMenu(ContextMenu);
+        // Menus are reused, so pick up the current theme's style each time one opens.
+        ContextMenuOpening += (_, _) => App.StyleMenu(ContextMenu);
     }
 
     protected void SetPillContent(UIElement content) => _pill.Child = content;
@@ -159,6 +159,11 @@ public abstract class WidgetWindow : Window
             luminance = 0.25;
         }
 
+        // The Dark theme puts a translucent dark plate over the frost; the others a light glass tint.
+        var darkPlate = SettingsStore.Current.Theme == Theme.Dark;
+        _pill.Background = darkPlate ? DarkTint : GlassTint;
+        _pill.BorderBrush = darkPlate ? DarkBorder : GlassBorder;
+
         // Text inherits Window.Foreground, so every widget uses the same colour.
         var dark = SettingsStore.Current.Theme switch
         {
@@ -186,6 +191,9 @@ public abstract class WidgetWindow : Window
     }
 
     private static readonly Brush GlassTint = Frozen(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush GlassBorder = Frozen(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush DarkTint = Frozen(Color.FromArgb(0x80, 0x1C, 0x1C, 0x1F));
+    private static readonly Brush DarkBorder = Frozen(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
     private static readonly Brush DarkText = Frozen(Color.FromRgb(0x10, 0x10, 0x14));
     private static readonly Brush LightText = Frozen(Colors.White);
 

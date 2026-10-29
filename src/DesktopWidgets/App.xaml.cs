@@ -31,6 +31,7 @@ public partial class App : Application
         System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         WidgetWindow.Preview = e.Args.Contains("--preview");
         SettingsStore.Load();
+        ApplyMenuTheme();
         Backdrop.Initialize();
 
         if (SettingsStore.Current.Widgets.Count == 0)
@@ -117,6 +118,7 @@ public partial class App : Application
     {
         SettingsStore.Current.Theme = theme;
         SettingsStore.Save();
+        ApplyMenuTheme();
         foreach (var w in _widgets)
             w.UpdateBackdrop();
     }
@@ -135,6 +137,23 @@ public partial class App : Application
         // City names come from the geocoder in the UI language, so fetch them again.
         RefreshWeather();
     }
+
+    private static readonly ResourceDictionary DarkMenu = new()
+    {
+        Source = new Uri("pack://application:,,,/DesktopWidgets;component/DarkMenu.xaml"),
+    };
+
+    /// <summary>Menus are dark (#2A2A2A) with the Dark theme and stock otherwise.</summary>
+    private void ApplyMenuTheme()
+    {
+        var merged = Resources.MergedDictionaries;
+        merged.Remove(DarkMenu);
+        if (SettingsStore.Current.Theme == Theme.Dark)
+            merged.Add(DarkMenu);
+    }
+
+    /// <summary>Menus are created once and reused, so apply the current theme's style before one opens.</summary>
+    public static void StyleMenu(ContextMenu menu) => menu.Style = Current.TryFindResource(typeof(ContextMenu)) as Style;
 
     public async void RefreshWeather()
     {
