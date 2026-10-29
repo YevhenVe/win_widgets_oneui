@@ -161,6 +161,14 @@ public partial class App : Application
         return brush;
     }
 
+    public void SetTextColor(TextColor color)
+    {
+        SettingsStore.Current.TextColor = color;
+        SettingsStore.Save();
+        foreach (var w in _widgets)
+            w.UpdateBackdrop();
+    }
+
     public async void RefreshWeather()
     {
         foreach (var w in _widgets.OfType<WeatherWidget>().ToList())

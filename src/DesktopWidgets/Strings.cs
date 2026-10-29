@@ -31,8 +31,12 @@ public static class Strings
     public static string WidgetShadow => T("Widget shadow", "Тінь віджетів");
     public static string Theme => T("Theme", "Тема");
     public static string ThemeAuto => T("Auto", "Авто");
-    public static string ThemeLight => T("Light (dark text)", "Світла (темний текст)");
-    public static string ThemeDark => T("Dark (white text)", "Темна (білий текст)");
+    public static string ThemeLight => T("Light", "Світла");
+    public static string ThemeDark => T("Dark", "Темна");
+    public static string TextColorHeader => T("Text color", "Колір тексту");
+    public static string TextMatchTheme => T("Match theme", "Як у темі");
+    public static string TextDark => T("Dark text", "Темний текст");
+    public static string TextWhite => T("White text", "Білий текст");
     public static string LanguageMenu => T("Language", "Мова");
     public static string WeatherLocationMenu => T("Weather location…", "Місто для погоди…");
     public static string UseFahrenheit => T("Use Fahrenheit", "Градуси Фаренгейта");

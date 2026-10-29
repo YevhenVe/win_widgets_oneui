@@ -21,9 +21,17 @@ public sealed record WeatherSnapshot(double Temperature, int Code, bool IsDay, s
 
 public enum Theme
 {
-    Auto,  // text colour follows the wallpaper brightness
-    Light, // dark text
-    Dark,  // white text
+    Auto,  // light glass; text colour follows the wallpaper brightness
+    Light, // light glass, dark text
+    Dark,  // dark plate, white text
+}
+
+/// <summary>Manual override of the text colour the theme would pick.</summary>
+public enum TextColor
+{
+    Auto, // as the theme decides
+    Dark,
+    White,
 }
 
 public enum Language
@@ -41,6 +49,7 @@ public sealed class AppSettings
     public int BlurAmount { get; set; } = 35; // 0..100
     public bool WidgetShadow { get; set; } = true;
     public Theme Theme { get; set; } = Theme.Auto;
+    public TextColor TextColor { get; set; } = TextColor.Auto;
     public Language? Language { get; set; } // null: follow the Windows display language
     public WeatherSnapshot? LastWeather { get; set; }
 }

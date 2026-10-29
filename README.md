@@ -12,7 +12,7 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 - **Soft shadow** under the widgets, can be turned off.
 - **Lives on the desktop**: widgets stay below your windows and are hidden from the taskbar and Alt+Tab.
 - **Move and scale**: drag to move, <kbd>Ctrl</kbd> + mouse wheel to resize (50–300 %). Positions and sizes are remembered.
-- **Themes**: Auto (text colour follows the wallpaper brightness), Light (dark text), Dark (white text on a translucent dark plate, with dark menus).
+- **Themes**: Auto (text colour follows the wallpaper brightness), Light (dark text), Dark (white text on a translucent dark plate, with dark menus). The text colour can also be set to dark or white manually.
 - **Languages**: English and Ukrainian (Українська), switched live from the tray; the date follows the chosen language.
 - **Lightweight**: about 0 % CPU and ~45 MB RAM while idle.
 
@@ -32,7 +32,7 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 | <kbd>Ctrl</kbd> + wheel over a widget | Resize it |
 | Click the weather widget | Open the forecast on weather.com |
 | Right-click a widget | Refresh weather, set location, scale, lock position, remove widget |
-| Tray icon | Add clock / weather, background and blur amount, refresh background, widget shadow, theme, language, weather location, Fahrenheit, start with Windows, exit |
+| Tray icon | Add clock / weather, background and blur amount, refresh background, widget shadow, theme and text colour, language, weather location, Fahrenheit, start with Windows, exit |
 
 Settings are stored in `%LOCALAPPDATA%\DesktopWidgets\settings.json`.
 

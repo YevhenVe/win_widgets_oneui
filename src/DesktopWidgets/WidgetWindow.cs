@@ -173,11 +173,16 @@ public abstract class WidgetWindow : Window
         _pill.BorderBrush = darkPlate ? DarkBorder : GlassBorder;
 
         // Text inherits Window.Foreground, so every widget uses the same colour.
-        var dark = SettingsStore.Current.Theme switch
+        var dark = SettingsStore.Current.TextColor switch
         {
-            Theme.Light => true,
-            Theme.Dark => false,
-            _ => luminance > 0.5,
+            TextColor.Dark => true,
+            TextColor.White => false,
+            _ => SettingsStore.Current.Theme switch
+            {
+                Theme.Light => true,
+                Theme.Dark => false,
+                _ => luminance > 0.5,
+            },
         };
         Foreground = dark ? DarkText : LightText;
     }

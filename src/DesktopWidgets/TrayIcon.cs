@@ -96,6 +96,14 @@ public sealed class TrayIcon : IDisposable
             item.Click += (_, _) => App.Instance.SetTheme(value);
             theme.Items.Add(item);
         }
+        theme.Items.Add(new Separator());
+        theme.Items.Add(new MenuItem { Header = Strings.TextColorHeader, IsEnabled = false });
+        foreach (var (value, label) in new[] { (TextColor.Auto, Strings.TextMatchTheme), (TextColor.Dark, Strings.TextDark), (TextColor.White, Strings.TextWhite) })
+        {
+            var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = settings.TextColor == value };
+            item.Click += (_, _) => App.Instance.SetTextColor(value);
+            theme.Items.Add(item);
+        }
         _menu.Items.Add(theme);
 
         // Language names stay in their own language so they can be found from either one.
