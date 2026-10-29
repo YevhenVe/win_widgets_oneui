@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
@@ -10,6 +11,7 @@ namespace DesktopWidgets;
 public static class WeatherService
 {
     private static readonly HttpClient Http = CreateClient();
+    private static readonly Dictionary<string, string> LocalizedNames = new();
 
     private static HttpClient CreateClient()
     {
@@ -43,6 +45,12 @@ public static class WeatherService
         if (!string.IsNullOrWhiteSpace(city))
             return await GeocodeAsync(city);
 
+        var (lat, lon, name) = await LocateByIpAsync();
+        return (lat, lon, await LocalizeAsync(name, lat, lon));
+    }
+
+    private static async Task<(double Lat, double Lon, string City)> LocateByIpAsync()
+    {
         try
         {
             using var doc = JsonDocument.Parse(await Http.GetStringAsync("https://ipapi.co/json/"));
@@ -57,6 +65,56 @@ public static class WeatherService
             return (root.GetProperty("lat").GetDouble(), root.GetProperty("lon").GetDouble(),
                 root.GetProperty("city").GetString() ?? "");
         }
+    }
+
+    /// <summary>
+    /// IP services only return English city names. Looks the name up in the geocoder in the UI language
+    /// and takes the match closest to the IP location (several towns can share a name); keeps the
+    /// original when there is no translation or no match nearby.
+    /// </summary>
+    private static async Task<string> LocalizeAsync(string city, double lat, double lon)
+    {
+        if (city.Length == 0 || Strings.Current == Language.English)
+            return city;
+        var key = $"{Strings.Code}|{city}";
+        if (LocalizedNames.TryGetValue(key, out var cached))
+            return cached;
+
+        var name = city;
+        try
+        {
+            var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(city)}&count=10&language={Strings.Code}";
+            using var doc = JsonDocument.Parse(await Http.GetStringAsync(url));
+            if (doc.RootElement.TryGetProperty("results", out var results))
+            {
+                var best = double.MaxValue;
+                foreach (var r in results.EnumerateArray())
+                {
+                    var km = DistanceKm(lat, lon, r.GetProperty("latitude").GetDouble(), r.GetProperty("longitude").GetDouble());
+                    if (km < MaxMatchKm && km < best)
+                    {
+                        best = km;
+                        name = r.GetProperty("name").GetString() ?? city;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            return city; // try again on the next refresh
+        }
+        LocalizedNames[key] = name;
+        return name;
+    }
+
+    private const double MaxMatchKm = 50; // IP services often name the metro centre, tens of km away
+
+    private static double DistanceKm(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double rad = Math.PI / 180;
+        var a = Math.Pow(Math.Sin((lat2 - lat1) * rad / 2), 2) +
+                Math.Cos(lat1 * rad) * Math.Cos(lat2 * rad) * Math.Pow(Math.Sin((lon2 - lon1) * rad / 2), 2);
+        return 6371 * 2 * Math.Asin(Math.Sqrt(a));
     }
 
     public static async Task<(double Lat, double Lon, string City)> GeocodeAsync(string city)

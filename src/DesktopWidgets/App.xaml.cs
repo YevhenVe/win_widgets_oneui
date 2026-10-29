@@ -132,9 +132,8 @@ public partial class App : Application
             else if (w is WeatherWidget weather)
                 weather.Rerender();
         }
-        // A city typed by the user is geocoded in the UI language, so fetch its name again.
-        if (SettingsStore.Current.City is not null)
-            RefreshWeather();
+        // City names come from the geocoder in the UI language, so fetch them again.
+        RefreshWeather();
     }
 
     public async void RefreshWeather()
