@@ -90,11 +90,11 @@ public sealed class WeatherWidget : WidgetWindow
 
     protected override void AddMenuItems(ContextMenu menu)
     {
-        var refresh = new MenuItem { Header = "Refresh weather" };
+        var refresh = new MenuItem { Header = Strings.RefreshWeather };
         refresh.Click += async (_, _) => await RefreshAsync();
         menu.Items.Add(refresh);
 
-        var city = new MenuItem { Header = "Set location…" };
+        var city = new MenuItem { Header = Strings.SetLocation };
         city.Click += (_, _) => App.Instance.AskCity();
         menu.Items.Add(city);
     }
@@ -114,8 +114,8 @@ public sealed class WeatherWidget : WidgetWindow
         catch (Exception ex)
         {
             if (SettingsStore.Current.LastWeather is null)
-                _city.Text = "No data";
-            ToolTip = "Update failed: " + ex.Message;
+                _city.Text = Strings.NoData;
+            ToolTip = Strings.UpdateFailed(ex.Message);
         }
         finally
         {
@@ -124,12 +124,15 @@ public sealed class WeatherWidget : WidgetWindow
         }
     }
 
+    /// <summary>Re-renders the cached weather after a language switch (texts and tooltip).</summary>
+    public void Rerender() => Render(SettingsStore.Current.LastWeather);
+
     private void Render(WeatherSnapshot? s)
     {
         if (s is null)
         {
             _temp.Text = "--°";
-            _city.Text = "Loading…";
+            _city.Text = Strings.Loading;
             _icon.Content = WeatherIcons.Create(0, true, 76);
             return;
         }
@@ -137,6 +140,6 @@ public sealed class WeatherWidget : WidgetWindow
         _temp.Text = $"{Math.Round(s.Temperature):0}°";
         _city.Text = s.City;
         _icon.Content = WeatherIcons.Create(s.Code, s.IsDay, 76);
-        ToolTip = $"Updated {s.FetchedAt:t}";
+        ToolTip = Strings.Updated(s.FetchedAt);
     }
 }

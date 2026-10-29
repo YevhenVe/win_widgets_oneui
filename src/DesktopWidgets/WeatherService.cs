@@ -61,11 +61,10 @@ public static class WeatherService
 
     public static async Task<(double Lat, double Lon, string City)> GeocodeAsync(string city)
     {
-        var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(city.Trim())}&count=1&language={lang}";
+                var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(city.Trim())}&count=1&language={Strings.Code}";
         using var doc = JsonDocument.Parse(await Http.GetStringAsync(url));
         if (!doc.RootElement.TryGetProperty("results", out var results) || results.GetArrayLength() == 0)
-            throw new InvalidOperationException($"City \"{city}\" not found");
+            throw new InvalidOperationException(Strings.CityNotFound(city));
         var r = results[0];
         return (r.GetProperty("latitude").GetDouble(), r.GetProperty("longitude").GetDouble(),
             r.GetProperty("name").GetString() ?? city);

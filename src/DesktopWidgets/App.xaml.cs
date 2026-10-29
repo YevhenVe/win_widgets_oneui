@@ -121,6 +121,22 @@ public partial class App : Application
             w.UpdateBackdrop();
     }
 
+    public void SetLanguage(Language language)
+    {
+        SettingsStore.Current.Language = language;
+        SettingsStore.Save();
+        foreach (var w in _widgets)
+        {
+            if (w is ClockWidget clock)
+                clock.Refresh();
+            else if (w is WeatherWidget weather)
+                weather.Rerender();
+        }
+        // A city typed by the user is geocoded in the UI language, so fetch its name again.
+        if (SettingsStore.Current.City is not null)
+            RefreshWeather();
+    }
+
     public async void RefreshWeather()
     {
         foreach (var w in _widgets.OfType<WeatherWidget>().ToList())
@@ -131,10 +147,10 @@ public partial class App : Application
     {
         var box = new TextBox { Text = SettingsStore.Current.City ?? "", Margin = new Thickness(0, 8, 0, 12), Padding = new Thickness(4) };
         var ok = new Button { Content = "OK", IsDefault = true, Width = 90, Margin = new Thickness(0, 0, 8, 0) };
-        var auto = new Button { Content = "Auto (IP)", Width = 90 };
+        var auto = new Button { Content = Strings.AutoIp, Width = 90 };
         var dialog = new Window
         {
-            Title = "Weather location",
+            Title = Strings.WeatherLocationTitle,
             SizeToContent = SizeToContent.WidthAndHeight,
             ResizeMode = ResizeMode.NoResize,
             WindowStartupLocation = WindowStartupLocation.CenterScreen,
@@ -145,7 +161,7 @@ public partial class App : Application
                 Width = 300,
                 Children =
                 {
-                    new TextBlock { Text = "City name (leave empty to detect by IP):" },
+                    new TextBlock { Text = Strings.CityPrompt, TextWrapping = TextWrapping.Wrap },
                     box,
                     new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { ok, auto } },
                 },

@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -48,6 +47,9 @@ public sealed class ClockWidget : WidgetWindow
         Closed += (_, _) => _timer.Stop();
     }
 
+    /// <summary>Redraws the day and date right away (after a language switch).</summary>
+    public void Refresh() => Tick();
+
     private void Tick()
     {
         var now = DateTime.Now;
@@ -55,7 +57,7 @@ public sealed class ClockWidget : WidgetWindow
         _minute.Angle = now.Minute * 6 + now.Second * 0.1;
         _hour.Angle = (now.Hour % 12) * 30 + now.Minute * 0.5;
 
-        var culture = CultureInfo.CurrentCulture;
+        var culture = Strings.Culture;
         var day = now.ToString("ddd", culture);
         _day.Text = culture.TextInfo.ToTitleCase(day.TrimEnd('.')) + ",";
         _date.Text = now.ToString("d MMM", culture).TrimEnd('.');

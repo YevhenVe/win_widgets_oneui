@@ -70,12 +70,12 @@ public sealed class TrayIcon : IDisposable
     {
         var settings = SettingsStore.Current;
         _menu.Items.Clear();
-        Item("Add clock", () => App.Instance.AddWidget("clock"));
-        Item("Add weather", () => App.Instance.AddWidget("weather"));
+        Item(Strings.AddClock, () => App.Instance.AddWidget("clock"));
+        Item(Strings.AddWeather, () => App.Instance.AddWidget("weather"));
         _menu.Items.Add(new Separator());
 
-        var background = new MenuItem { Header = "Background" };
-        foreach (var (mode, label) in new[] { (BlurMode.Blur, "Frosted blur"), (BlurMode.None, "No blur") })
+        var background = new MenuItem { Header = Strings.Background };
+        foreach (var (mode, label) in new[] { (BlurMode.Blur, Strings.FrostedBlur), (BlurMode.None, Strings.NoBlur) })
         {
             var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = settings.Blur == mode };
             item.Click += (_, _) => App.Instance.SetBlur(mode);
@@ -84,11 +84,11 @@ public sealed class TrayIcon : IDisposable
         background.Items.Add(new Separator());
         background.Items.Add(BlurSlider(settings.BlurAmount));
         _menu.Items.Add(background);
-        Item("Refresh background", () => Backdrop.Rebuild("tray menu"));
-        Item("Widget shadow", () => App.Instance.SetWidgetShadow(!settings.WidgetShadow), settings.WidgetShadow);
+        Item(Strings.RefreshBackground, () => Backdrop.Rebuild("tray menu"));
+        Item(Strings.WidgetShadow, () => App.Instance.SetWidgetShadow(!settings.WidgetShadow), settings.WidgetShadow);
 
-        var theme = new MenuItem { Header = "Theme" };
-        foreach (var (value, label) in new[] { (Theme.Auto, "Auto"), (Theme.Light, "Light (dark text)"), (Theme.Dark, "Dark (white text)") })
+        var theme = new MenuItem { Header = Strings.Theme };
+        foreach (var (value, label) in new[] { (Theme.Auto, Strings.ThemeAuto), (Theme.Light, Strings.ThemeLight), (Theme.Dark, Strings.ThemeDark) })
         {
             var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = settings.Theme == value };
             item.Click += (_, _) => App.Instance.SetTheme(value);
@@ -96,22 +96,32 @@ public sealed class TrayIcon : IDisposable
         }
         _menu.Items.Add(theme);
 
-        Item("Weather location…", App.Instance.AskCity);
-        Item("Use Fahrenheit", () =>
+        // Language names stay in their own language so they can be found from either one.
+        var language = new MenuItem { Header = Strings.LanguageMenu };
+        foreach (var (value, label) in new[] { (Language.English, "English"), (Language.Ukrainian, "Українська") })
+        {
+            var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = Strings.Current == value };
+            item.Click += (_, _) => App.Instance.SetLanguage(value);
+            language.Items.Add(item);
+        }
+        _menu.Items.Add(language);
+
+        Item(Strings.WeatherLocationMenu, App.Instance.AskCity);
+        Item(Strings.UseFahrenheit, () =>
         {
             settings.Fahrenheit = !settings.Fahrenheit;
             SettingsStore.Save();
             App.Instance.RefreshWeather();
         }, settings.Fahrenheit);
-        Item("Start with Windows", () => SetAutostart(!IsAutostart()), IsAutostart());
+        Item(Strings.StartWithWindows, () => SetAutostart(!IsAutostart()), IsAutostart());
         _menu.Items.Add(new Separator());
-        Item("Exit", () => App.Instance.Shutdown());
+        Item(Strings.Exit, () => App.Instance.Shutdown());
     }
 
     /// <summary>"Blur amount" slider; the menu stays open while dragging and the widgets update live.</summary>
     private static MenuItem BlurSlider(int value)
     {
-        var label = new TextBlock { Text = $"Blur amount: {value}%" };
+        var label = new TextBlock { Text = Strings.BlurAmount(value) };
         var slider = new Slider
         {
             Minimum = 0,
@@ -125,7 +135,7 @@ public sealed class TrayIcon : IDisposable
         };
         slider.ValueChanged += (_, e) =>
         {
-            label.Text = $"Blur amount: {(int)e.NewValue}%";
+            label.Text = Strings.BlurAmount((int)e.NewValue);
             App.Instance.SetBlurAmount((int)e.NewValue);
         };
         return new MenuItem

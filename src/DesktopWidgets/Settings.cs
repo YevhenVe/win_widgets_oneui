@@ -26,6 +26,12 @@ public enum Theme
     Dark,  // white text
 }
 
+public enum Language
+{
+    English,
+    Ukrainian,
+}
+
 public sealed class AppSettings
 {
     public List<WidgetConfig> Widgets { get; set; } = new();
@@ -35,6 +41,7 @@ public sealed class AppSettings
     public int BlurAmount { get; set; } = 35; // 0..100
     public bool WidgetShadow { get; set; } = true;
     public Theme Theme { get; set; } = Theme.Auto;
+    public Language? Language { get; set; } // null: follow the Windows display language
     public WeatherSnapshot? LastWeather { get; set; }
 }
 

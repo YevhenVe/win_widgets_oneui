@@ -270,16 +270,16 @@ public abstract class WidgetWindow : Window
         if (menu.Items.Count > 0)
             menu.Items.Add(new Separator());
 
-        var scaleMenu = new MenuItem { Header = $"Scale ({Config.Scale:P0})" };
+        var scaleMenu = new MenuItem { Header = Strings.Scale(Config.Scale) };
         foreach (var s in new[] { 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5 })
         {
-            var item = new MenuItem { Header = $"{s:P0}", IsCheckable = true, IsChecked = Math.Abs(Config.Scale - s) < 0.001 };
+            var item = new MenuItem { Header = s.ToString("P0", Strings.Culture), IsCheckable = true, IsChecked = Math.Abs(Config.Scale - s) < 0.001 };
             item.Click += (_, _) => ApplyScale(s);
             scaleMenu.Items.Add(item);
         }
         menu.Items.Add(scaleMenu);
 
-        var lockItem = new MenuItem { Header = "Lock position", IsCheckable = true, IsChecked = Config.Locked };
+        var lockItem = new MenuItem { Header = Strings.LockPosition, IsCheckable = true, IsChecked = Config.Locked };
         lockItem.Click += (_, _) =>
         {
             Config.Locked = lockItem.IsChecked;
@@ -288,10 +288,10 @@ public abstract class WidgetWindow : Window
         menu.Items.Add(lockItem);
 
         menu.Items.Add(new Separator());
-        var remove = new MenuItem { Header = "Remove widget" };
+        var remove = new MenuItem { Header = Strings.RemoveWidget };
         remove.Click += (_, _) => App.Instance.RemoveWidget(this);
         menu.Items.Add(remove);
-        var exit = new MenuItem { Header = "Exit" };
+        var exit = new MenuItem { Header = Strings.Exit };
         exit.Click += (_, _) => App.Instance.Shutdown();
         menu.Items.Add(exit);
     }
