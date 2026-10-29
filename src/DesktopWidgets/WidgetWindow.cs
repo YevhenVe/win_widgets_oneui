@@ -99,8 +99,6 @@ public abstract class WidgetWindow : Window
 
         ContextMenu = new ContextMenu();
         ContextMenu.Opened += (_, _) => BuildMenu(ContextMenu);
-        // Menus are reused, so pick up the current theme's style each time one opens.
-        ContextMenuOpening += (_, _) => App.StyleMenu(ContextMenu);
     }
 
     protected void SetPillContent(UIElement content) => _pill.Child = content;

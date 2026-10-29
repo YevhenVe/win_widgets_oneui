@@ -138,22 +138,25 @@ public partial class App : Application
         RefreshWeather();
     }
 
-    private static readonly ResourceDictionary DarkMenu = new()
-    {
-        Source = new Uri("pack://application:,,,/DesktopWidgets;component/DarkMenu.xaml"),
-    };
-
-    /// <summary>Menus are dark (#2A2A2A) with the Dark theme and stock otherwise.</summary>
+    /// <summary>Menu colours (Menus.xaml): dark #2A2A2A with the Dark theme, Windows 11 light otherwise.</summary>
     private void ApplyMenuTheme()
     {
-        var merged = Resources.MergedDictionaries;
-        merged.Remove(DarkMenu);
-        if (SettingsStore.Current.Theme == Theme.Dark)
-            merged.Add(DarkMenu);
+        var dark = SettingsStore.Current.Theme == Theme.Dark;
+        Resources["Menu.Background"] = Brush(dark ? 0xFF2A2A2A : 0xFFF9F9F9);
+        Resources["Menu.Border"] = Brush(dark ? 0xFF3C3C3C : 0xFFE0E0E0);
+        Resources["Menu.Highlight"] = Brush(dark ? 0xFF3D3D3D : 0xFFEAEAEA);
+        Resources["Menu.Text"] = Brush(dark ? 0xFFF2F2F2 : 0xFF1A1A1A);
+        Resources["Menu.DisabledText"] = Brush(dark ? 0xFF7A7A7A : 0xFFA0A0A0);
+        Resources["Menu.Separator"] = Brush(dark ? 0xFF424242 : 0xFFE5E5E5);
     }
 
-    /// <summary>Menus are created once and reused, so apply the current theme's style before one opens.</summary>
-    public static void StyleMenu(ContextMenu menu) => menu.Style = Current.TryFindResource(typeof(ContextMenu)) as Style;
+    private static System.Windows.Media.SolidColorBrush Brush(uint argb)
+    {
+        var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(
+            (byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb));
+        brush.Freeze();
+        return brush;
+    }
 
     public async void RefreshWeather()
     {

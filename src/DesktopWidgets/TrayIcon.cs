@@ -60,7 +60,6 @@ public sealed class TrayIcon : IDisposable
     private void ShowMenu()
     {
         BuildMenu();
-        App.StyleMenu(_menu);
         _menu.IsOpen = true;
         // Without foreground the menu would not close when clicking elsewhere.
         if (PresentationSource.FromVisual(_menu) is HwndSource popup)
