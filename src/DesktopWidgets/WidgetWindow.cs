@@ -152,20 +152,20 @@ public abstract class WidgetWindow : Window
             return;
         BackdropUpdates++;
 
-        var luminance = 0.5;
-        if (SettingsStore.Current.Blur == BlurMode.Blur && Backdrop.Image is { } image && PillScreenRect() is { } rect)
+        var luminance = 0.25;
+        var frosted = false;
+        if (Backdrop.Image is { } image && PillScreenRect() is { } rect)
         {
             var area = Backdrop.Map(rect);
-            _frost.ImageSource = image;
-            _frost.Viewbox = area;
-            _frostLayer.Background = _frost;
             luminance = Backdrop.Luminance(area);
+            if (SettingsStore.Current.Blur == BlurMode.Blur)
+            {
+                _frost.ImageSource = image;
+                _frost.Viewbox = area;
+                frosted = true;
+            }
         }
-        else
-        {
-            _frostLayer.Background = new SolidColorBrush(Color.FromArgb(0x99, 0x30, 0x34, 0x3A));
-            luminance = 0.25;
-        }
+        _frostLayer.Background = frosted ? _frost : ClickableClear;
 
         _pill.Background = TintBrush();
         _pill.BorderBrush = TintBorder();
@@ -212,6 +212,8 @@ public abstract class WidgetWindow : Window
         };
     }
 
+    // Invisible, but Windows passes clicks through pixels with zero alpha.
+    private static readonly Brush ClickableClear = Frozen(Color.FromArgb(0x01, 0x00, 0x00, 0x00));
     internal static readonly Brush DarkText = Frozen(Color.FromRgb(0x10, 0x10, 0x14));
     internal static readonly Brush LightText = Frozen(Colors.White);
 
