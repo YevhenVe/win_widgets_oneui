@@ -15,6 +15,7 @@ internal static class Native
     public const int GWL_EXSTYLE = -20;
     public const int WS_EX_TOOLWINDOW = 0x00000080;
     public const int WS_EX_APPWINDOW = 0x00040000;
+    public const int WS_EX_NOACTIVATE = 0x08000000;
 
     public const int WM_WINDOWPOSCHANGING = 0x0046;
 
@@ -94,6 +95,17 @@ internal static class Native
     {
         var value = dark ? 1 : 0;
         DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, sizeof(int));
+    }
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    /// <summary>A no-activate window takes no focus, so Windows skips it when the last app closes and Alt+F4 can't reach it.</summary>
+    public static void SetNoActivate(IntPtr hwnd, bool enabled)
+    {
+        var ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
+        ex = enabled ? ex | WS_EX_NOACTIVATE : ex & ~WS_EX_NOACTIVATE;
+        SetWindowLongPtr(hwnd, GWL_EXSTYLE, new IntPtr(ex));
     }
 
     public static void SetToolWindow(IntPtr hwnd)

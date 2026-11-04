@@ -22,7 +22,6 @@ public sealed class ClockWidget : WidgetWindow
     private readonly TextBlock _date = new();
     private readonly DispatcherTimer _timer = new(DispatcherPriority.Render);
     private CalendarWindow? _calendar;
-    private DateTime _calendarClosedAt;
 
     public ClockWidget(WidgetConfig config) : base(config)
     {
@@ -58,16 +57,18 @@ public sealed class ClockWidget : WidgetWindow
         };
     }
 
-    /// <summary>Toggles the month view. Clicking the clock first takes focus from an open calendar, which closes it.</summary>
+    /// <summary>Toggles the month view. The clock takes no focus, so an open calendar stays open until closed here.</summary>
     protected override void OnClick()
     {
-        if (_calendar is not null || (DateTime.UtcNow - _calendarClosedAt).TotalMilliseconds < 500)
+        if (_calendar is not null)
+        {
+            _calendar.Close();
             return;
+        }
         _calendar = new CalendarWindow(this);
         _calendar.Closed += (_, _) =>
         {
             _calendar = null;
-            _calendarClosedAt = DateTime.UtcNow;
             MemoryTrim.Schedule();
         };
         _calendar.Show();

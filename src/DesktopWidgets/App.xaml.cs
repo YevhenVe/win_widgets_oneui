@@ -96,7 +96,7 @@ public partial class App : Application
         SettingsStore.Current.Widgets.Remove(widget.Config);
         SettingsStore.Save();
         _widgets.Remove(widget);
-        widget.Close();
+        widget.Remove();
     }
 
     public void SetBlurAmount(int amount)

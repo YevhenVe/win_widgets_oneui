@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,6 +34,7 @@ public abstract class WidgetWindow : Window
     private readonly Border _pill = new();
     private readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromMilliseconds(600) };
     private IntPtr _hwnd;
+    private bool _removing;
 
     protected WidgetWindow(WidgetConfig config)
     {
@@ -98,6 +100,12 @@ public abstract class WidgetWindow : Window
         Closed += (_, _) => Backdrop.Changed -= UpdateBackdrop;
 
         ResetMenu();
+        // A context menu closes at once on a window without focus, so the widget has it while the menu is open.
+        ContextMenuOpening += (_, _) =>
+        {
+            Native.SetNoActivate(_hwnd, false);
+            Native.SetForegroundWindow(_hwnd);
+        };
     }
 
     protected void SetPillContent(UIElement content) => _pill.Child = content;
@@ -112,10 +120,24 @@ public abstract class WidgetWindow : Window
     {
         var menu = new ContextMenu();
         menu.Opened += (_, _) => BuildMenu(menu);
+        menu.Closed += (_, _) => Native.SetNoActivate(_hwnd, true);
         ContextMenu = menu;
     }
 
     protected virtual void AddMenuItems(ContextMenu menu) { }
+
+    /// <summary>Closes the widget for good; any other close request (such as Alt+F4) is ignored.</summary>
+    public void Remove()
+    {
+        _removing = true;
+        Close();
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        e.Cancel = !_removing; // application shutdown ignores this
+        base.OnClosing(e);
+    }
 
     /// <summary>The soft drop shadow every widget glyph (clock face, weather icon) gets.</summary>
     protected static Effect GlyphShadow() =>
@@ -135,6 +157,7 @@ public abstract class WidgetWindow : Window
         _hwnd = new WindowInteropHelper(this).Handle;
         HwndSource.FromHwnd(_hwnd)!.AddHook(WndProc);
         Native.SetToolWindow(_hwnd);
+        Native.SetNoActivate(_hwnd, true);
         EnsureOnScreen();
         UpdateBackdrop();
         if (Preview)
