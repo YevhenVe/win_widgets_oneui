@@ -49,6 +49,8 @@ public static class Strings
     public static string RefreshWeather => T("Refresh weather", "Оновити погоду");
     public static string SetLocation => T("Set location…", "Вибрати місто…");
     public static string Scale(double scale) => T("Scale", "Масштаб") + " (" + scale.ToString("P0", Culture) + ")";
+    public static string ShortDate => T("Short format", "Короткий варіант");
+    public static string DateTextSize(int size) => T($"Text size: {size}", $"Розмір тексту: {size}");
     public static string LockPosition => T("Lock position", "Закріпити позицію");
     public static string RemoveWidget => T("Remove widget", "Видалити віджет");
 

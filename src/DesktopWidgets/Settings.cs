@@ -14,6 +14,11 @@ public sealed class WidgetConfig
     public double Top { get; set; }
     public double Scale { get; set; } = 1.0;
     public bool Locked { get; set; }
+
+    // Clock only. Each format keeps its own text size: full names need a smaller one to fit.
+    public bool ShortDate { get; set; }
+    public double FullDateSize { get; set; } = 18;
+    public double ShortDateSize { get; set; } = 27;
 }
 
 public sealed record WeatherSnapshot(double Temperature, int Code, bool IsDay, string City, DateTime FetchedAt,

@@ -115,7 +115,7 @@ public sealed class TrayIcon : IDisposable
     }
 
     /// <summary>A labelled slider in 1 % steps (the wheel moves it by one); the menu stays open while dragging and the widgets update live.</summary>
-    private static MenuItem SliderItem(int min, int max, int value, Func<int, string> text, Action<int> apply)
+    internal static MenuItem SliderItem(int min, int max, int value, Func<int, string> text, Action<int> apply)
     {
         var label = new TextBlock { Text = text(value) };
         var slider = new Slider

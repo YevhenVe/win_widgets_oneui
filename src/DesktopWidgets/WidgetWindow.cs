@@ -102,6 +102,8 @@ public abstract class WidgetWindow : Window
 
     protected void SetPillContent(UIElement content) => _pill.Child = content;
 
+    protected void SetPillPadding(Thickness padding) => _pill.Padding = padding;
+
     /// <summary>
     /// A closed context menu is outside any visual tree and misses theme colour changes,
     /// so a fresh one is created whenever the theme switches.
