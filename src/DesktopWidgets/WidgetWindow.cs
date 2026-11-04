@@ -158,7 +158,7 @@ public abstract class WidgetWindow : Window
         {
             var area = Backdrop.Map(rect);
             luminance = Backdrop.Luminance(area);
-            if (SettingsStore.Current.Blur == BlurMode.Blur)
+            if (SettingsStore.Current.BlurAmount > 0)
             {
                 _frost.ImageSource = image;
                 _frost.Viewbox = area;

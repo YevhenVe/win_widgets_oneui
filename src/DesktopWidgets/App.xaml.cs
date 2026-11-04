@@ -98,14 +98,6 @@ public partial class App : Application
         widget.Close();
     }
 
-    public void SetBlur(BlurMode mode)
-    {
-        SettingsStore.Current.Blur = mode;
-        SettingsStore.Save();
-        foreach (var w in _widgets)
-            w.UpdateBackdrop();
-    }
-
     public void SetBlurAmount(int amount)
     {
         SettingsStore.Current.BlurAmount = amount;

@@ -358,7 +358,7 @@ internal static class Backdrop
     /// <summary>Gaussian blur with edge extension, so screen borders don't fade to transparent.</summary>
     private static BitmapSource Blur(BitmapSource sharp, double radius)
     {
-        if (radius < 0.5)
+        if (radius <= 0)
             return sharp;
 
         int w = sharp.PixelWidth, h = sharp.PixelHeight;

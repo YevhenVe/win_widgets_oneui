@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace DesktopWidgets;
 
+/// <summary>Replaced by BlurAmount = 0; only read from old settings files.</summary>
 public enum BlurMode
 {
     Blur,

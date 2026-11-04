@@ -46,8 +46,10 @@ public sealed class AppSettings
     public List<WidgetConfig> Widgets { get; set; } = new();
     public string? City { get; set; }
     public bool Fahrenheit { get; set; }
-    public BlurMode Blur { get; set; } = BlurMode.Blur;
-    public int BlurAmount { get; set; } = 35; // 0..100
+    public int BlurAmount { get; set; } = 35; // 0 (off, the wallpaper shows as is) .. 100
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public BlurMode? Blur { get; set; }
     public bool WidgetShadow { get; set; } = true;
     public int Tint { get; set; } // -50 (black) .. 0 (none) .. +50 (white), in percent
 
@@ -83,6 +85,9 @@ public static class SettingsStore
                 if (Current.Theme == Theme.Dark)
                     Current.Tint = -50; // the old Dark theme's plate
                 Current.Theme = null;
+                if (Current.Blur == BlurMode.None)
+                    Current.BlurAmount = 0;
+                Current.Blur = null;
             }
         }
         catch

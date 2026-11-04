@@ -78,14 +78,7 @@ public sealed class TrayIcon : IDisposable
         _menu.Items.Add(new Separator());
 
         var background = new MenuItem { Header = Strings.Background };
-        foreach (var (mode, label) in new[] { (BlurMode.Blur, Strings.FrostedBlur), (BlurMode.None, Strings.NoBlur) })
-        {
-            var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = settings.Blur == mode };
-            item.Click += (_, _) => App.Instance.SetBlur(mode);
-            background.Items.Add(item);
-        }
-        background.Items.Add(new Separator());
-        background.Items.Add(SliderItem(0, 100, settings.BlurAmount, Strings.BlurAmount, App.Instance.SetBlurAmount, settings.Blur == BlurMode.Blur));
+        background.Items.Add(SliderItem(0, 100, settings.BlurAmount, Strings.BlurAmount, App.Instance.SetBlurAmount));
         background.Items.Add(SliderItem(-50, 50, settings.Tint, Strings.Tint, App.Instance.SetTint));
         background.Items.Add(new Separator());
         background.Items.Add(new MenuItem { Header = Strings.TextColorHeader, IsEnabled = false });
@@ -121,8 +114,8 @@ public sealed class TrayIcon : IDisposable
         Item(Strings.Exit, () => App.Instance.Shutdown());
     }
 
-    /// <summary>A labelled slider in 5 % steps; the menu stays open while dragging and the widgets update live.</summary>
-    private static MenuItem SliderItem(int min, int max, int value, Func<int, string> text, Action<int> apply, bool enabled = true)
+    /// <summary>A labelled slider in 1 % steps (the wheel moves it by one); the menu stays open while dragging and the widgets update live.</summary>
+    private static MenuItem SliderItem(int min, int max, int value, Func<int, string> text, Action<int> apply)
     {
         var label = new TextBlock { Text = text(value) };
         var slider = new Slider
@@ -130,8 +123,8 @@ public sealed class TrayIcon : IDisposable
             Minimum = min,
             Maximum = max,
             Value = value,
-            Width = 180,
-            TickFrequency = 5,
+            Width = 240,
+            TickFrequency = 1,
             IsSnapToTickEnabled = true,
             IsMoveToPointEnabled = true,
             Margin = new Thickness(0, 4, 0, 0),
@@ -141,11 +134,15 @@ public sealed class TrayIcon : IDisposable
             label.Text = text((int)e.NewValue);
             apply((int)e.NewValue);
         };
+        slider.PreviewMouseWheel += (_, e) =>
+        {
+            slider.Value += Math.Sign(e.Delta);
+            e.Handled = true;
+        };
         return new MenuItem
         {
             Header = new StackPanel { Children = { label, slider } },
             StaysOpenOnClick = true,
-            IsEnabled = enabled,
         };
     }
 

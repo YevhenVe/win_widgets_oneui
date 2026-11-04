@@ -8,7 +8,7 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 
 - **Analog clock** with a One UI "cookie" face, plus day and date in your system locale.
 - **Current weather** from [Open-Meteo](https://open-meteo.com/) (no API key needed). Location is detected by IP or set by city name. Click the widget to open the full forecast on weather.com.
-- **Frosted glass look**: the wallpaper behind each widget is blurred with adjustable strength, edges are smooth, multiple monitors and every wallpaper fit mode are supported. New wallpapers are picked up in about a second.
+- **Frosted glass look**: the wallpaper behind each widget is blurred with adjustable strength (0 turns it off), edges are smooth, multiple monitors and every wallpaper fit mode are supported. New wallpapers are picked up in about a second.
 - **Soft shadow** under the widgets, can be turned off.
 - **Lives on the desktop**: widgets stay below your windows and are hidden from the taskbar and Alt+Tab.
 - **Calendar**: click the clock to open a month view; arrows or the mouse wheel change the month.

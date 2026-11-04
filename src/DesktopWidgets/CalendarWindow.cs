@@ -169,7 +169,7 @@ internal sealed class CalendarWindow : Window
     {
         _card.BorderBrush = WidgetWindow.TintBorder();
 
-        if (SettingsStore.Current.Blur == BlurMode.Blur && Backdrop.Image is { } image && ScreenRect() is { } rect)
+        if (SettingsStore.Current.BlurAmount > 0 && Backdrop.Image is { } image && ScreenRect() is { } rect)
         {
             var area = Backdrop.Map(rect);
             _frost.ImageSource = image;

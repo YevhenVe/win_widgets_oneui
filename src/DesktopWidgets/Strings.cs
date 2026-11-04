@@ -24,9 +24,9 @@ public static class Strings
     public static string AddClock => T("Add clock", "Додати годинник");
     public static string AddWeather => T("Add weather", "Додати погоду");
     public static string Background => T("Background", "Фон");
-    public static string FrostedBlur => T("Frosted blur", "Матове розмиття");
-    public static string NoBlur => T("No blur", "Без розмиття");
-    public static string BlurAmount(int percent) => T($"Blur amount: {percent}%", $"Розмиття: {percent}%");
+    public static string BlurAmount(int percent) => percent == 0
+        ? T("Blur amount: off", "Розмиття: вимкнено")
+        : T($"Blur amount: {percent}%", $"Розмиття: {percent}%");
     public static string RefreshBackground => T("Refresh background", "Оновити фон");
     public static string WidgetShadow => T("Widget shadow", "Тінь віджетів");
     public static string Tint(int percent) => percent switch
