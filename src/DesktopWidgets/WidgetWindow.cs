@@ -167,27 +167,34 @@ public abstract class WidgetWindow : Window
             luminance = 0.25;
         }
 
-        // The Dark theme puts a translucent dark plate over the frost; the others show the frost as is.
-        var darkPlate = SettingsStore.Current.Theme == Theme.Dark;
-        _pill.Background = darkPlate ? DarkTint : Brushes.Transparent;
-        _pill.BorderBrush = darkPlate ? DarkBorder : GlassBorder;
+        _pill.Background = TintBrush();
+        _pill.BorderBrush = TintBorder();
 
         // Text inherits Window.Foreground, so every widget uses the same colour.
         Foreground = UsesDarkText(luminance) ? DarkText : LightText;
     }
 
-    /// <summary>Whether text on a backdrop of this luminance is dark, per the text colour and theme settings.</summary>
+    /// <summary>Whether text on a backdrop of this luminance is dark: the manual setting, or what is readable once tinted.</summary>
     internal static bool UsesDarkText(double luminance) => SettingsStore.Current.TextColor switch
     {
         TextColor.Dark => true,
         TextColor.White => false,
-        _ => SettingsStore.Current.Theme switch
-        {
-            Theme.Light => true,
-            Theme.Dark => false,
-            _ => luminance > 0.5,
-        },
+        _ => luminance + (TintLuminance - luminance) * Math.Abs(Tint) / 100.0 > 0.5,
     };
+
+    private static int Tint => Math.Clamp(SettingsStore.Current.Tint, -50, 50);
+    private static double TintLuminance => Tint < 0 ? 0.11 : 1.0;
+
+    /// <summary>The translucent layer over the frost: near-black or white, by the tint slider.</summary>
+    internal static Brush TintBrush()
+    {
+        var alpha = (byte)Math.Round(Math.Abs(Tint) * 2.55);
+        return Frozen(Tint < 0 ? Color.FromArgb(alpha, 0x1C, 0x1C, 0x1F) : Color.FromArgb(alpha, 0xFF, 0xFF, 0xFF));
+    }
+
+    /// <summary>The thin white border, fainter towards black so it doesn't glow against the dark tint.</summary>
+    internal static Brush TintBorder() =>
+        Frozen(Color.FromArgb((byte)(Tint < 0 ? 0x40 + (0x1F - 0x40) * -Tint / 50 : 0x40), 0xFF, 0xFF, 0xFF));
 
     /// <summary>The pill's bounds in physical screen pixels (the window itself is larger because of the shadow room).</summary>
     internal Native.RECT? PillScreenRect()
@@ -205,9 +212,6 @@ public abstract class WidgetWindow : Window
         };
     }
 
-    internal static readonly Brush GlassBorder = Frozen(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
-    internal static readonly Brush DarkTint = Frozen(Color.FromArgb(0x80, 0x1C, 0x1C, 0x1F));
-    internal static readonly Brush DarkBorder = Frozen(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
     internal static readonly Brush DarkText = Frozen(Color.FromRgb(0x10, 0x10, 0x14));
     internal static readonly Brush LightText = Frozen(Colors.White);
 

@@ -15,6 +15,7 @@ public partial class App : Application
     private readonly List<WidgetWindow> _widgets = new();
     private Mutex? _singleInstance;
     private TrayIcon? _tray;
+    private bool _darkMenus;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -114,16 +115,25 @@ public partial class App : Application
             w.ApplyShadow();
     }
 
-    public void SetTheme(Theme theme)
+    public void SetTint(int tint)
     {
-        SettingsStore.Current.Theme = theme;
+        SettingsStore.Current.Tint = tint;
         SettingsStore.Save();
+        foreach (var w in _widgets)
+            w.UpdateBackdrop();
+    }
+
+    /// <summary>
+    /// Applies a tint change to the menus once the tray menu holding the slider has closed:
+    /// an open menu would only recolour partly. Widget menus are recreated, as closed menus miss the change.
+    /// </summary>
+    public void SyncMenuTheme()
+    {
+        if (SettingsStore.Current.Tint < 0 == _darkMenus)
+            return;
         ApplyMenuTheme();
         foreach (var w in _widgets)
-        {
             w.ResetMenu();
-            w.UpdateBackdrop();
-        }
     }
 
     public void SetLanguage(Language language)
@@ -141,10 +151,10 @@ public partial class App : Application
         RefreshWeather();
     }
 
-    /// <summary>Menu colours (Menus.xaml): dark #2A2A2A with the Dark theme, Windows 11 light otherwise.</summary>
+    /// <summary>Menu colours (Menus.xaml): dark #2A2A2A on the black side of the tint slider, Windows 11 light otherwise.</summary>
     private void ApplyMenuTheme()
     {
-        var dark = SettingsStore.Current.Theme == Theme.Dark;
+        var dark = _darkMenus = SettingsStore.Current.Tint < 0;
         Resources["Menu.Background"] = Brush(dark ? 0xFF2A2A2A : 0xFFF9F9F9);
         Resources["Menu.Border"] = Brush(dark ? 0xFF3C3C3C : 0xFFE0E0E0);
         Resources["Menu.Highlight"] = Brush(dark ? 0xFF3D3D3D : 0xFFEAEAEA);

@@ -60,7 +60,9 @@ public sealed class TrayIcon : IDisposable
     private void ShowMenu()
     {
         // A closed menu misses theme colour changes (it is outside any visual tree), so start fresh.
+        _menu.IsOpen = false;
         _menu = new ContextMenu { Placement = PlacementMode.MousePoint };
+        _menu.Closed += (_, _) => App.Instance.SyncMenuTheme();
         BuildMenu();
         _menu.IsOpen = true;
         // Without foreground the menu would not close when clicking elsewhere.
@@ -84,27 +86,19 @@ public sealed class TrayIcon : IDisposable
             background.Items.Add(item);
         }
         background.Items.Add(new Separator());
-        background.Items.Add(BlurSlider(settings.BlurAmount));
-        _menu.Items.Add(background);
-        Item(Strings.RefreshBackground, () => Backdrop.Rebuild("tray menu"));
-        Item(Strings.WidgetShadow, () => App.Instance.SetWidgetShadow(!settings.WidgetShadow), settings.WidgetShadow);
-
-        var theme = new MenuItem { Header = Strings.Theme };
-        foreach (var (value, label) in new[] { (Theme.Auto, Strings.ThemeAuto), (Theme.Light, Strings.ThemeLight), (Theme.Dark, Strings.ThemeDark) })
-        {
-            var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = settings.Theme == value };
-            item.Click += (_, _) => App.Instance.SetTheme(value);
-            theme.Items.Add(item);
-        }
-        theme.Items.Add(new Separator());
-        theme.Items.Add(new MenuItem { Header = Strings.TextColorHeader, IsEnabled = false });
-        foreach (var (value, label) in new[] { (TextColor.Auto, Strings.TextMatchTheme), (TextColor.Dark, Strings.TextDark), (TextColor.White, Strings.TextWhite) })
+        background.Items.Add(SliderItem(0, 100, settings.BlurAmount, Strings.BlurAmount, App.Instance.SetBlurAmount, settings.Blur == BlurMode.Blur));
+        background.Items.Add(SliderItem(-50, 50, settings.Tint, Strings.Tint, App.Instance.SetTint));
+        background.Items.Add(new Separator());
+        background.Items.Add(new MenuItem { Header = Strings.TextColorHeader, IsEnabled = false });
+        foreach (var (value, label) in new[] { (TextColor.Auto, Strings.TextAuto), (TextColor.Dark, Strings.TextDark), (TextColor.White, Strings.TextWhite) })
         {
             var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = settings.TextColor == value };
             item.Click += (_, _) => App.Instance.SetTextColor(value);
-            theme.Items.Add(item);
+            background.Items.Add(item);
         }
-        _menu.Items.Add(theme);
+        _menu.Items.Add(background);
+        Item(Strings.RefreshBackground, () => Backdrop.Rebuild("tray menu"));
+        Item(Strings.WidgetShadow, () => App.Instance.SetWidgetShadow(!settings.WidgetShadow), settings.WidgetShadow);
 
         // Language names stay in their own language so they can be found from either one.
         var language = new MenuItem { Header = Strings.LanguageMenu };
@@ -128,14 +122,14 @@ public sealed class TrayIcon : IDisposable
         Item(Strings.Exit, () => App.Instance.Shutdown());
     }
 
-    /// <summary>"Blur amount" slider; the menu stays open while dragging and the widgets update live.</summary>
-    private static MenuItem BlurSlider(int value)
+    /// <summary>A labelled slider in 5 % steps; the menu stays open while dragging and the widgets update live.</summary>
+    private static MenuItem SliderItem(int min, int max, int value, Func<int, string> text, Action<int> apply, bool enabled = true)
     {
-        var label = new TextBlock { Text = Strings.BlurAmount(value) };
+        var label = new TextBlock { Text = text(value) };
         var slider = new Slider
         {
-            Minimum = 0,
-            Maximum = 100,
+            Minimum = min,
+            Maximum = max,
             Value = value,
             Width = 180,
             TickFrequency = 5,
@@ -145,14 +139,14 @@ public sealed class TrayIcon : IDisposable
         };
         slider.ValueChanged += (_, e) =>
         {
-            label.Text = Strings.BlurAmount((int)e.NewValue);
-            App.Instance.SetBlurAmount((int)e.NewValue);
+            label.Text = text((int)e.NewValue);
+            apply((int)e.NewValue);
         };
         return new MenuItem
         {
             Header = new StackPanel { Children = { label, slider } },
             StaysOpenOnClick = true,
-            IsEnabled = SettingsStore.Current.Blur == BlurMode.Blur,
+            IsEnabled = enabled,
         };
     }
 

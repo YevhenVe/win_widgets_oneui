@@ -19,17 +19,18 @@ public sealed class WidgetConfig
 public sealed record WeatherSnapshot(double Temperature, int Code, bool IsDay, string City, DateTime FetchedAt,
     double Latitude = 0, double Longitude = 0);
 
+/// <summary>Replaced by <see cref="AppSettings.Tint"/>; only read from old settings files.</summary>
 public enum Theme
 {
-    Auto,  // no plate; text colour follows the wallpaper brightness
-    Light, // shown as "Transparent": no plate, dark text (name kept for saved settings)
-    Dark,  // dark plate, white text
+    Auto,
+    Light,
+    Dark,
 }
 
 /// <summary>Manual override of the text colour the theme would pick.</summary>
 public enum TextColor
 {
-    Auto, // as the theme decides
+    Auto, // follows the brightness of the tinted backdrop
     Dark,
     White,
 }
@@ -48,7 +49,10 @@ public sealed class AppSettings
     public BlurMode Blur { get; set; } = BlurMode.Blur;
     public int BlurAmount { get; set; } = 35; // 0..100
     public bool WidgetShadow { get; set; } = true;
-    public Theme Theme { get; set; } = Theme.Auto;
+    public int Tint { get; set; } // -50 (black) .. 0 (none) .. +50 (white), in percent
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Theme? Theme { get; set; }
     public TextColor TextColor { get; set; } = TextColor.Auto;
     public Language? Language { get; set; } // null: follow the Windows display language
     public WeatherSnapshot? LastWeather { get; set; }
@@ -74,7 +78,12 @@ public static class SettingsStore
         try
         {
             if (File.Exists(FilePath))
+            {
                 Current = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath), Options) ?? new();
+                if (Current.Theme == Theme.Dark)
+                    Current.Tint = -50; // the old Dark theme's plate
+                Current.Theme = null;
+            }
         }
         catch
         {

@@ -29,12 +29,14 @@ public static class Strings
     public static string BlurAmount(int percent) => T($"Blur amount: {percent}%", $"Розмиття: {percent}%");
     public static string RefreshBackground => T("Refresh background", "Оновити фон");
     public static string WidgetShadow => T("Widget shadow", "Тінь віджетів");
-    public static string Theme => T("Theme", "Тема");
-    public static string ThemeAuto => T("Auto", "Авто");
-    public static string ThemeLight => T("Transparent", "Прозора");
-    public static string ThemeDark => T("Dark", "Темна");
+    public static string Tint(int percent) => percent switch
+    {
+        0 => T("Tint: none", "Відтінок: немає"),
+        < 0 => T($"Tint: black {-percent}%", $"Відтінок: чорний {-percent}%"),
+        _ => T($"Tint: white {percent}%", $"Відтінок: білий {percent}%"),
+    };
     public static string TextColorHeader => T("Text color", "Колір тексту");
-    public static string TextMatchTheme => T("Match theme", "Як у темі");
+    public static string TextAuto => T("Auto", "Авто");
     public static string TextDark => T("Dark text", "Темний текст");
     public static string TextWhite => T("White text", "Білий текст");
     public static string LanguageMenu => T("Language", "Мова");

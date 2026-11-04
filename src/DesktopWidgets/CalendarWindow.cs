@@ -164,12 +164,10 @@ internal sealed class CalendarWindow : Window
         Render();
     }
 
-    /// <summary>Same layers as a widget: frosted wallpaper, the theme's plate and the thin border.</summary>
+    /// <summary>Same layers as a widget: frosted wallpaper, the tint and the thin border.</summary>
     private void UpdateLook()
     {
-        var dark = SettingsStore.Current.Theme == Theme.Dark;
-        _card.Background = dark ? WidgetWindow.DarkTint : Brushes.Transparent;
-        _card.BorderBrush = dark ? WidgetWindow.DarkBorder : WidgetWindow.GlassBorder;
+        _card.BorderBrush = WidgetWindow.TintBorder();
 
         if (SettingsStore.Current.Blur == BlurMode.Blur && Backdrop.Image is { } image && ScreenRect() is { } rect)
         {
@@ -177,12 +175,14 @@ internal sealed class CalendarWindow : Window
             _frost.ImageSource = image;
             _frost.Viewbox = area;
             _frostLayer.Background = _frost;
+            _card.Background = WidgetWindow.TintBrush();
             Foreground = WidgetWindow.UsesDarkText(Backdrop.Luminance(area)) ? WidgetWindow.DarkText : WidgetWindow.LightText;
         }
         else
         {
             // The card can cover other windows, so without the frost it needs a solid background.
             _frostLayer.Background = (Brush)FindResource("Menu.Background");
+            _card.Background = Brushes.Transparent;
             Foreground = (Brush)FindResource("Menu.Text");
         }
         Render();
