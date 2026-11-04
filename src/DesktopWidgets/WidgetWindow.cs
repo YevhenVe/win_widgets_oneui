@@ -167,9 +167,9 @@ public abstract class WidgetWindow : Window
             luminance = 0.25;
         }
 
-        // The Dark theme puts a translucent dark plate over the frost; the others a light glass tint.
+        // The Dark theme puts a translucent dark plate over the frost; the others show the frost as is.
         var darkPlate = SettingsStore.Current.Theme == Theme.Dark;
-        _pill.Background = darkPlate ? DarkTint : GlassTint;
+        _pill.Background = darkPlate ? DarkTint : Brushes.Transparent;
         _pill.BorderBrush = darkPlate ? DarkBorder : GlassBorder;
 
         // Text inherits Window.Foreground, so every widget uses the same colour.
@@ -203,7 +203,6 @@ public abstract class WidgetWindow : Window
         };
     }
 
-    private static readonly Brush GlassTint = Frozen(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF));
     private static readonly Brush GlassBorder = Frozen(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
     private static readonly Brush DarkTint = Frozen(Color.FromArgb(0x80, 0x1C, 0x1C, 0x1F));
     private static readonly Brush DarkBorder = Frozen(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));

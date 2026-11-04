@@ -21,8 +21,8 @@ public sealed record WeatherSnapshot(double Temperature, int Code, bool IsDay, s
 
 public enum Theme
 {
-    Auto,  // light glass; text colour follows the wallpaper brightness
-    Light, // light glass, dark text
+    Auto,  // no plate; text colour follows the wallpaper brightness
+    Light, // shown as "Transparent": no plate, dark text (name kept for saved settings)
     Dark,  // dark plate, white text
 }
 

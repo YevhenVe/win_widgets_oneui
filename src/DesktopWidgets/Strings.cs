@@ -31,7 +31,7 @@ public static class Strings
     public static string WidgetShadow => T("Widget shadow", "Тінь віджетів");
     public static string Theme => T("Theme", "Тема");
     public static string ThemeAuto => T("Auto", "Авто");
-    public static string ThemeLight => T("Light", "Світла");
+    public static string ThemeLight => T("Transparent", "Прозора");
     public static string ThemeDark => T("Dark", "Темна");
     public static string TextColorHeader => T("Text color", "Колір тексту");
     public static string TextMatchTheme => T("Match theme", "Як у темі");
