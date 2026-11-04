@@ -85,6 +85,17 @@ internal static class Native
         return info.rcWork;
     }
 
+    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    public static void SetDarkTitleBar(IntPtr hwnd, bool dark)
+    {
+        var value = dark ? 1 : 0;
+        DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, sizeof(int));
+    }
+
     public static void SetToolWindow(IntPtr hwnd)
     {
         var ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();

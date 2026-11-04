@@ -1,4 +1,4 @@
-<!-- Modern (Windows 11-like) context menus for the tray and widgets: rounded corners, soft shadow.
+<!-- Modern (Windows 11-like) context menus for the tray and widgets, plus the controls of the location dialog.
      The stock WPF templates hard-code XP-era light colours for submenus, separators and the icon
      column, so they are replaced. Colours are DynamicResources set by App.ApplyMenuTheme (light/dark). -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -78,6 +78,45 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource Menu.DisabledText}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="TextBox">
+        <Setter Property="Foreground" Value="{DynamicResource Menu.Text}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource Menu.Text}" />
+        <Setter Property="Padding" Value="6,5" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{DynamicResource Menu.Highlight}" BorderBrush="{DynamicResource Menu.Border}"
+                            BorderThickness="1" CornerRadius="4">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource Menu.Text}" />
+        <Setter Property="Padding" Value="0,5" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" Background="{DynamicResource Menu.Highlight}" BorderBrush="{DynamicResource Menu.Border}"
+                            BorderThickness="1" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource Menu.Border}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.7" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -17,6 +17,7 @@ public partial class App : Application
     private Mutex? _singleInstance;
     private TrayIcon? _tray;
     private bool _darkMenus;
+    private IntPtr _locationDialog;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -129,6 +130,8 @@ public partial class App : Application
         ApplyMenuTheme();
         foreach (var w in _widgets)
             w.ResetMenu();
+        if (_locationDialog != IntPtr.Zero)
+            Native.SetDarkTitleBar(_locationDialog, _darkMenus);
     }
 
     private static bool WindowsUsesDarkApps()
@@ -210,6 +213,14 @@ public partial class App : Application
                 },
             },
         };
+        dialog.SetResourceReference(Control.BackgroundProperty, "Menu.Background");
+        dialog.SetResourceReference(Control.ForegroundProperty, "Menu.Text");
+        dialog.SourceInitialized += (_, _) =>
+        {
+            _locationDialog = new System.Windows.Interop.WindowInteropHelper(dialog).Handle;
+            Native.SetDarkTitleBar(_locationDialog, _darkMenus);
+        };
+        dialog.Closed += (_, _) => _locationDialog = IntPtr.Zero;
         ok.Click += (_, _) => dialog.DialogResult = true;
         auto.Click += (_, _) =>
         {
