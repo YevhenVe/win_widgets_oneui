@@ -11,6 +11,9 @@ namespace DesktopWidgets;
 public sealed class ClockWidget : WidgetWindow
 {
     private const double Face = 80;
+    private const double TextWidth = 120; // what is left of the fixed-size pill next to the face
+    private const int MinTextSize = 12;
+    private const int MaxTextSize = 36;
 
     private readonly RotateTransform _hour = new(0, Face / 2, Face / 2);
     private readonly RotateTransform _minute = new(0, Face / 2, Face / 2);
@@ -25,18 +28,20 @@ public sealed class ClockWidget : WidgetWindow
     {
         foreach (var tb in new[] { _day, _date })
         {
-            tb.FontSize = 27;
             tb.FontWeight = FontWeights.SemiBold;
-            tb.LineHeight = 34;
+            tb.TextTrimming = TextTrimming.CharacterEllipsis;
         }
+        ApplyTextSize();
 
         var text = new StackPanel
         {
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(18, 0, 0, 2),
+            MaxWidth = TextWidth,
             Children = { _day, _date },
         };
 
+        SetPillPadding(new Thickness(20, 0, 20, 0));
         SetPillContent(new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -69,6 +74,48 @@ public sealed class ClockWidget : WidgetWindow
         _calendar.Activate();
     }
 
+    private double TextSize
+    {
+        get => Config.ShortDate ? Config.ShortDateSize : Config.FullDateSize;
+        set
+        {
+            if (Config.ShortDate)
+                Config.ShortDateSize = value;
+            else
+                Config.FullDateSize = value;
+        }
+    }
+
+    private void ApplyTextSize()
+    {
+        foreach (var tb in new[] { _day, _date })
+        {
+            tb.FontSize = TextSize;
+            tb.LineHeight = TextSize * 1.26;
+        }
+    }
+
+    protected override void AddMenuItems(ContextMenu menu)
+    {
+        var size = (int)Math.Clamp(TextSize, MinTextSize, MaxTextSize);
+        menu.Items.Add(TrayIcon.SliderItem(MinTextSize, MaxTextSize, size, Strings.DateTextSize, value =>
+        {
+            TextSize = value;
+            ApplyTextSize();
+            SettingsStore.Save();
+        }));
+
+        var format = new MenuItem { Header = Strings.ShortDate, IsCheckable = true, IsChecked = Config.ShortDate };
+        format.Click += (_, _) =>
+        {
+            Config.ShortDate = format.IsChecked;
+            ApplyTextSize();
+            Tick();
+            SettingsStore.Save();
+        };
+        menu.Items.Add(format);
+    }
+
     /// <summary>Redraws the day and date right away (after a language switch).</summary>
     public void Refresh() => Tick();
 
@@ -80,9 +127,10 @@ public sealed class ClockWidget : WidgetWindow
         _hour.Angle = (now.Hour % 12) * 30 + now.Minute * 0.5;
 
         var culture = Strings.Culture;
-        var day = now.ToString("ddd", culture);
+        var day = now.ToString(Config.ShortDate ? "ddd" : "dddd", culture);
+        var date = now.ToString(Config.ShortDate ? "d MMM" : "d MMMM", culture);
         _day.Text = culture.TextInfo.ToTitleCase(day.TrimEnd('.')) + ",";
-        _date.Text = now.ToString("d MMM", culture).TrimEnd('.');
+        _date.Text = culture.TextInfo.ToTitleCase(date.TrimEnd('.'));
 
         // Re-arm exactly on the next second boundary so the hand never drifts.
         _timer.Stop();
