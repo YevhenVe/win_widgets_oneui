@@ -62,7 +62,6 @@ public sealed class TrayIcon : IDisposable
         // A closed menu misses theme colour changes (it is outside any visual tree), so start fresh.
         _menu.IsOpen = false;
         _menu = new ContextMenu { Placement = PlacementMode.MousePoint };
-        _menu.Closed += (_, _) => App.Instance.SyncMenuTheme();
         BuildMenu();
         _menu.IsOpen = true;
         // Without foreground the menu would not close when clicking elsewhere.

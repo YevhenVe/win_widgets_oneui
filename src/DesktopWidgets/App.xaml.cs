@@ -5,6 +5,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Microsoft.Win32;
 
 namespace DesktopWidgets;
 
@@ -33,6 +34,11 @@ public partial class App : Application
         WidgetWindow.Preview = e.Args.Contains("--preview");
         SettingsStore.Load();
         ApplyMenuTheme();
+        SystemEvents.UserPreferenceChanged += (_, args) =>
+        {
+            if (args.Category == UserPreferenceCategory.General)
+                Dispatcher.InvokeAsync(SyncMenuTheme);
+        };
         Backdrop.Initialize();
 
         if (SettingsStore.Current.Widgets.Count == 0)
@@ -123,17 +129,20 @@ public partial class App : Application
             w.UpdateBackdrop();
     }
 
-    /// <summary>
-    /// Applies a tint change to the menus once the tray menu holding the slider has closed:
-    /// an open menu would only recolour partly. Widget menus are recreated, as closed menus miss the change.
-    /// </summary>
-    public void SyncMenuTheme()
+    /// <summary>Follows a switch of the Windows mode. Widget menus are recreated, as closed menus miss the change.</summary>
+    private void SyncMenuTheme()
     {
-        if (SettingsStore.Current.Tint < 0 == _darkMenus)
+        if (WindowsUsesDarkApps() == _darkMenus)
             return;
         ApplyMenuTheme();
         foreach (var w in _widgets)
             w.ResetMenu();
+    }
+
+    private static bool WindowsUsesDarkApps()
+    {
+        using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+        return key?.GetValue("AppsUseLightTheme") is 0;
     }
 
     public void SetLanguage(Language language)
@@ -151,10 +160,10 @@ public partial class App : Application
         RefreshWeather();
     }
 
-    /// <summary>Menu colours (Menus.xaml): dark #2A2A2A on the black side of the tint slider, Windows 11 light otherwise.</summary>
+    /// <summary>Menu colours (Menus.xaml) follow the Windows app mode: dark #2A2A2A or Windows 11 light.</summary>
     private void ApplyMenuTheme()
     {
-        var dark = _darkMenus = SettingsStore.Current.Tint < 0;
+        var dark = _darkMenus = WindowsUsesDarkApps();
         Resources["Menu.Background"] = Brush(dark ? 0xFF2A2A2A : 0xFFF9F9F9);
         Resources["Menu.Border"] = Brush(dark ? 0xFF3C3C3C : 0xFFE0E0E0);
         Resources["Menu.Highlight"] = Brush(dark ? 0xFF3D3D3D : 0xFFEAEAEA);

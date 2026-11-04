@@ -13,7 +13,8 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 - **Lives on the desktop**: widgets stay below your windows and are hidden from the taskbar and Alt+Tab.
 - **Calendar**: click the clock to open a month view; arrows or the mouse wheel change the month.
 - **Move and scale**: drag to move, <kbd>Ctrl</kbd> + mouse wheel to resize (50–300 %). Positions and sizes are remembered.
-- **Tint**: one slider from black 50 % through fully transparent to white 50 %. The black side also switches the menus to dark.
+- **Tint**: one slider from black 50 % through fully transparent (default) to white 50 %.
+- **Menus** follow the Windows light or dark mode.
 - **Text colour**: picked automatically for the tinted background, or set to dark or white manually.
 - **Languages**: English and Ukrainian (Українська), switched live from the tray; the date follows the chosen language.
 - **Lightweight**: about 0 % CPU and ~45 MB RAM while idle.
