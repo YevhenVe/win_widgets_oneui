@@ -173,22 +173,24 @@ public abstract class WidgetWindow : Window
         _pill.BorderBrush = darkPlate ? DarkBorder : GlassBorder;
 
         // Text inherits Window.Foreground, so every widget uses the same colour.
-        var dark = SettingsStore.Current.TextColor switch
-        {
-            TextColor.Dark => true,
-            TextColor.White => false,
-            _ => SettingsStore.Current.Theme switch
-            {
-                Theme.Light => true,
-                Theme.Dark => false,
-                _ => luminance > 0.5,
-            },
-        };
-        Foreground = dark ? DarkText : LightText;
+        Foreground = UsesDarkText(luminance) ? DarkText : LightText;
     }
 
+    /// <summary>Whether text on a backdrop of this luminance is dark, per the text colour and theme settings.</summary>
+    internal static bool UsesDarkText(double luminance) => SettingsStore.Current.TextColor switch
+    {
+        TextColor.Dark => true,
+        TextColor.White => false,
+        _ => SettingsStore.Current.Theme switch
+        {
+            Theme.Light => true,
+            Theme.Dark => false,
+            _ => luminance > 0.5,
+        },
+    };
+
     /// <summary>The pill's bounds in physical screen pixels (the window itself is larger because of the shadow room).</summary>
-    private Native.RECT? PillScreenRect()
+    internal Native.RECT? PillScreenRect()
     {
         if (_frostLayer.ActualWidth <= 0 || PresentationSource.FromVisual(_frostLayer) is null)
             return null;
@@ -203,11 +205,11 @@ public abstract class WidgetWindow : Window
         };
     }
 
-    private static readonly Brush GlassBorder = Frozen(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
-    private static readonly Brush DarkTint = Frozen(Color.FromArgb(0x80, 0x1C, 0x1C, 0x1F));
-    private static readonly Brush DarkBorder = Frozen(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
-    private static readonly Brush DarkText = Frozen(Color.FromRgb(0x10, 0x10, 0x14));
-    private static readonly Brush LightText = Frozen(Colors.White);
+    internal static readonly Brush GlassBorder = Frozen(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
+    internal static readonly Brush DarkTint = Frozen(Color.FromArgb(0x80, 0x1C, 0x1C, 0x1F));
+    internal static readonly Brush DarkBorder = Frozen(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
+    internal static readonly Brush DarkText = Frozen(Color.FromRgb(0x10, 0x10, 0x14));
+    internal static readonly Brush LightText = Frozen(Colors.White);
 
     private static Brush Frozen(Color color)
     {

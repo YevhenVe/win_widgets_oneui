@@ -18,6 +18,8 @@ public sealed class ClockWidget : WidgetWindow
     private readonly TextBlock _day = new();
     private readonly TextBlock _date = new();
     private readonly DispatcherTimer _timer = new(DispatcherPriority.Render);
+    private CalendarWindow? _calendar;
+    private DateTime _calendarClosedAt;
 
     public ClockWidget(WidgetConfig config) : base(config)
     {
@@ -44,7 +46,27 @@ public sealed class ClockWidget : WidgetWindow
 
         _timer.Tick += (_, _) => Tick();
         Tick();
-        Closed += (_, _) => _timer.Stop();
+        Closed += (_, _) =>
+        {
+            _timer.Stop();
+            _calendar?.Close();
+        };
+    }
+
+    /// <summary>Toggles the month view. Clicking the clock first takes focus from an open calendar, which closes it.</summary>
+    protected override void OnClick()
+    {
+        if (_calendar is not null || (DateTime.UtcNow - _calendarClosedAt).TotalMilliseconds < 500)
+            return;
+        _calendar = new CalendarWindow(this);
+        _calendar.Closed += (_, _) =>
+        {
+            _calendar = null;
+            _calendarClosedAt = DateTime.UtcNow;
+            MemoryTrim.Schedule();
+        };
+        _calendar.Show();
+        _calendar.Activate();
     }
 
     /// <summary>Redraws the day and date right away (after a language switch).</summary>
