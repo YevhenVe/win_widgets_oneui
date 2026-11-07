@@ -18,6 +18,8 @@ internal static class Native
     public const int WS_EX_NOACTIVATE = 0x08000000;
 
     public const int WM_WINDOWPOSCHANGING = 0x0046;
+    public const int WM_MOUSEACTIVATE = 0x0021;
+    public const int MA_NOACTIVATE = 3;
 
     public const uint SWP_NOSIZE = 0x0001;
     public const uint SWP_NOMOVE = 0x0002;
@@ -102,7 +104,6 @@ internal static class Native
 
     public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
     public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
-    public const uint WINEVENT_SKIPOWNPROCESS = 0x0002;
 
     public delegate void WinEventProc(IntPtr hook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint thread, uint time);
 

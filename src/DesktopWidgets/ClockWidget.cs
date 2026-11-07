@@ -72,7 +72,8 @@ public sealed class ClockWidget : WidgetWindow
             MemoryTrim.Schedule();
         };
         _calendar.Show();
-        _calendar.Activate();
+        if (!_calendar.Activate())
+            Native.SetForegroundWindow(new System.Windows.Interop.WindowInteropHelper(_calendar).Handle);
     }
 
     private double TextSize

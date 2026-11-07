@@ -35,6 +35,7 @@ public abstract class WidgetWindow : Window
     private readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromMilliseconds(600) };
     private IntPtr _hwnd;
     private bool _removing;
+    private IntPtr _foregroundBeforeMenu;
 
     /// <summary>True once the window is gone, also when Windows destroyed it with its owner (Explorer restart).</summary>
     public bool IsGone { get; private set; }
@@ -110,6 +111,11 @@ public abstract class WidgetWindow : Window
         // A context menu closes at once on a window without focus, so the widget has it while the menu is open.
         ContextMenuOpening += (_, _) =>
         {
+            _foregroundBeforeMenu = Native.GetForegroundWindow();
+            // Detached while focused: when Windows activates the desktop (Win+D) it hands focus on to the
+            // desktop's last focused owned window, and that must never be a widget.
+            if (!Preview)
+                Native.SetOwner(_hwnd, IntPtr.Zero);
             Native.SetNoActivate(_hwnd, false);
             Native.SetForegroundWindow(_hwnd);
         };
@@ -130,7 +136,11 @@ public abstract class WidgetWindow : Window
         menu.Closed += (_, _) =>
         {
             Native.SetNoActivate(_hwnd, true);
-            App.Instance.ScheduleKeepOnDesktop(); // opening the menu raised the widget
+            AttachToDesktop();
+            // Opening the menu raised and focused the widget; put it back and give focus back.
+            LowerToDesktop();
+            if (Native.GetForegroundWindow() == _hwnd && _foregroundBeforeMenu != IntPtr.Zero)
+                Native.SetForegroundWindow(_foregroundBeforeMenu);
         };
         ContextMenu = menu;
     }
@@ -334,6 +344,12 @@ public abstract class WidgetWindow : Window
     /// </summary>
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        // A click must not activate anything: by default Windows would activate the owner, the desktop.
+        if (msg == Native.WM_MOUSEACTIVATE)
+        {
+            handled = true;
+            return new IntPtr(Native.MA_NOACTIVATE);
+        }
         if (msg == Native.WM_WINDOWPOSCHANGING && !Preview)
         {
             var pos = Marshal.PtrToStructure<Native.WINDOWPOS>(lParam);

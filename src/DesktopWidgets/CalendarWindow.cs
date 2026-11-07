@@ -40,6 +40,7 @@ internal sealed class CalendarWindow : Window
     private readonly UniformGrid _days = new() { Columns = 7, Rows = 6 };
     private DateTime _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private bool _closing;
+    private bool _wasActive;
 
     public CalendarWindow(WidgetWindow anchor)
     {
@@ -85,7 +86,13 @@ internal sealed class CalendarWindow : Window
             if (e.Key == Key.Escape)
                 CloseOnce();
         };
-        Deactivated += (_, _) => CloseOnce();
+        // Close on focus loss only once it had focus, so a late activation elsewhere can't close it at once.
+        Activated += (_, _) => _wasActive = true;
+        Deactivated += (_, _) =>
+        {
+            if (_wasActive)
+                CloseOnce();
+        };
         Closing += (_, _) => _closing = true;
 
         Loaded += (_, _) => UpdateLook();

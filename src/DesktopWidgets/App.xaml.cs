@@ -68,7 +68,7 @@ public partial class App : Application
         };
         _foregroundChanged = (_, _, _, _, _, _, _) => ScheduleKeepOnDesktop();
         _foregroundHook = Native.SetWinEventHook(Native.EVENT_SYSTEM_FOREGROUND, Native.EVENT_SYSTEM_FOREGROUND, IntPtr.Zero,
-            _foregroundChanged, 0, 0, Native.WINEVENT_OUTOFCONTEXT | Native.WINEVENT_SKIPOWNPROCESS);
+            _foregroundChanged, 0, 0, Native.WINEVENT_OUTOFCONTEXT);
         _lowerTimer.Start();
 
         if (WidgetWindow.Preview)
@@ -267,11 +267,13 @@ public partial class App : Application
     private void KeepWidgetsOnDesktop()
     {
         // While Win+D shows the desktop it is the foreground window; moving any window would cancel it.
-        if (Native.IsDesktop(Native.GetForegroundWindow()))
+        // A focused widget (its menu is open) is left alone too.
+        var foreground = Native.GetForegroundWindow();
+        var handles = _widgets.Select(w => w.Handle).ToHashSet();
+        if (Native.IsDesktop(foreground) || handles.Contains(foreground))
             return;
         // Only move widgets that are not already in the run of widgets right above the desktop.
         var onDesktop = new HashSet<IntPtr>();
-        var handles = _widgets.Select(w => w.Handle).ToHashSet();
         for (var h = Native.GetWindow(Native.FindWindow("Progman", null), Native.GW_HWNDPREV);
              h != IntPtr.Zero && handles.Contains(h);
              h = Native.GetWindow(h, Native.GW_HWNDPREV))
