@@ -40,6 +40,10 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 
 Settings are stored in `%LOCALAPPDATA%\DesktopWidgets\settings.json`.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
+
 ## Build from source
 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) on Windows.
