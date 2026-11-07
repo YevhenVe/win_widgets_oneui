@@ -7,7 +7,7 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 ## Features
 
 - **Analog clock** with a One UI "cookie" face, plus the full day and month in your language. Right-click the clock for the text size and a short format; text that doesn't fit ends with an ellipsis.
-- **Current weather** from [Open-Meteo](https://open-meteo.com/) (no API key needed). Location is detected by IP or set by city name. Click the widget to open the full forecast on weather.com.
+- **Current weather** from [Open-Meteo](https://open-meteo.com/) (no API key needed). Location is detected by IP or set by city name. Click the widget to open the Windows Weather app (weather.com if the app is not installed).
 - **Frosted glass look**: the wallpaper behind each widget is blurred with adjustable strength (0 turns it off), edges are smooth, multiple monitors and every wallpaper fit mode are supported. New wallpapers are picked up in about a second.
 - **Soft shadow** under the widgets, can be turned off.
 - **Lives on the desktop**: widgets stay below your windows and are hidden from the taskbar and Alt+Tab.
@@ -34,7 +34,7 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 | Drag a widget | Move it |
 | <kbd>Ctrl</kbd> + wheel over a widget | Resize it |
 | Click the clock | Open the calendar (arrows or wheel: change month, click the title: back to today, Esc or click elsewhere: close) |
-| Click the weather widget | Open the forecast on weather.com |
+| Click the weather widget | Open the Windows Weather app (weather.com if it is not installed) |
 | Right-click a widget | Clock: text size, short format. Weather: refresh, set location. All: scale, lock position, remove widget |
 | Tray icon | Add clock / weather, background (blur, tint, text colour), refresh background, widget shadow, language, weather location, Fahrenheit, start with Windows, exit |
 

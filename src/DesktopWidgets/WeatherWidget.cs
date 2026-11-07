@@ -71,20 +71,32 @@ public sealed class WeatherWidget : WidgetWindow
             });
     }
 
-    /// <summary>Opens the full forecast for the same place on weather.com (Samsung Weather's data provider).</summary>
+    /// <summary>Opens the Windows Weather app, or the forecast on weather.com when the app is not installed.</summary>
     protected override void OnClick()
     {
+        using (var app = Registry.ClassesRoot.OpenSubKey("msnweather"))
+        {
+            if (app is not null && Open("msnweather:"))
+                return;
+        }
         var s = SettingsStore.Current.LastWeather;
         var url = s is { Latitude: not 0 } or { Longitude: not 0 }
             ? string.Create(CultureInfo.InvariantCulture, $"https://weather.com/weather/today/l/{s.Latitude:0.####},{s.Longitude:0.####}")
             : "https://weather.com/";
+        Open(url);
+    }
+
+    private static bool Open(string target)
+    {
         try
         {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+            return true;
         }
         catch (Exception ex)
         {
-            Log("open weather site failed: " + ex.Message);
+            Log($"open {target} failed: " + ex.Message);
+            return false;
         }
     }
 

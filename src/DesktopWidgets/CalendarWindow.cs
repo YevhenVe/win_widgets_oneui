@@ -108,7 +108,7 @@ internal sealed class CalendarWindow : Window
             Close();
     }
 
-    /// <summary>Opens below the clock, or above it when there is no room, inside the monitor's work area.</summary>
+    /// <summary>Opens centred below the clock, or above it when there is no room, inside the monitor's work area.</summary>
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -127,7 +127,7 @@ internal sealed class CalendarWindow : Window
         var gap = (int)Math.Round(Gap * _anchor.Config.Scale * dpi);
         var work = Native.WorkAreaOf(new WindowInteropHelper(_anchor).Handle);
 
-        var x = Math.Max(work.Left - margin, Math.Min(pill.Left - margin, work.Right + margin - width));
+        var x = Math.Max(work.Left - margin, Math.Min((pill.Left + pill.Right - width) / 2, work.Right + margin - width));
         var y = pill.Bottom + gap - margin;
         if (y + height - margin > work.Bottom)
             y = pill.Top - gap + margin - height;
