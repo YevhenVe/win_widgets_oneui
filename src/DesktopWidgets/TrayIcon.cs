@@ -53,6 +53,7 @@ public sealed class TrayIcon : IDisposable
         else if (msg == _taskbarCreated)
         {
             Add(); // Explorer restarted
+            App.Instance.OnExplorerRestarted();
         }
         return IntPtr.Zero;
     }

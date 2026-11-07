@@ -100,6 +100,37 @@ internal static class Native
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
 
+    public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+    public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
+    public const uint WINEVENT_SKIPOWNPROCESS = 0x0002;
+
+    public delegate void WinEventProc(IntPtr hook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint thread, uint time);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr module, WinEventProc proc, uint process, uint thread, uint flags);
+
+    [DllImport("user32.dll")]
+    public static extern bool UnhookWinEvent(IntPtr hook);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetClassName(IntPtr hwnd, System.Text.StringBuilder name, int max);
+
+    /// <summary>The desktop window itself (Progman, or the WorkerW Explorer puts behind the icons).</summary>
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    public static bool IsDesktop(IntPtr hwnd)
+    {
+        var name = new System.Text.StringBuilder(16);
+        GetClassName(hwnd, name, name.Capacity);
+        return name.ToString() is "Progman" or "WorkerW";
+    }
+
+    private const int GWLP_HWNDPARENT = -8;
+
+    /// <summary>Sets a top-level window's owner; Windows keeps owned windows above their owner.</summary>
+    public static void SetOwner(IntPtr hwnd, IntPtr owner) => SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, owner);
+
     /// <summary>A no-activate window takes no focus, so Windows skips it when the last app closes and Alt+F4 can't reach it.</summary>
     public static void SetNoActivate(IntPtr hwnd, bool enabled)
     {

@@ -17,6 +17,9 @@ public partial class App : Application
     private Mutex? _singleInstance;
     private TrayIcon? _tray;
     private bool _darkMenus;
+    private Native.WinEventProc? _foregroundChanged; // kept alive: Windows calls it
+    private IntPtr _foregroundHook;
+    private readonly System.Windows.Threading.DispatcherTimer _lowerTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
     private IntPtr _locationDialog;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -55,6 +58,19 @@ public partial class App : Application
 
         _tray = new TrayIcon();
 
+        // Win+D raises the desktop, and the widgets with it as it owns them; when another window comes
+        // to the front again the desktop drops back, so put the widgets back just above it each time.
+        // The desktop drops back only after the foreground event, so check a moment later.
+        _lowerTimer.Tick += (_, _) =>
+        {
+            _lowerTimer.Stop();
+            KeepWidgetsOnDesktop();
+        };
+        _foregroundChanged = (_, _, _, _, _, _, _) => ScheduleKeepOnDesktop();
+        _foregroundHook = Native.SetWinEventHook(Native.EVENT_SYSTEM_FOREGROUND, Native.EVENT_SYSTEM_FOREGROUND, IntPtr.Zero,
+            _foregroundChanged, 0, 0, Native.WINEVENT_OUTOFCONTEXT | Native.WINEVENT_SKIPOWNPROCESS);
+        _lowerTimer.Start();
+
         if (WidgetWindow.Preview)
         {
             var diag = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
@@ -71,6 +87,8 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _tray?.Dispose();
+        if (_foregroundHook != IntPtr.Zero)
+            Native.UnhookWinEvent(_foregroundHook);
         if (_widgets.Count > 0)
             SettingsStore.Save();
         _singleInstance?.Dispose();
@@ -238,6 +256,52 @@ public partial class App : Application
         SettingsStore.Current.City = string.IsNullOrWhiteSpace(box.Text) ? null : box.Text.Trim();
         SettingsStore.Save();
         RefreshWeather();
+    }
+
+    public void ScheduleKeepOnDesktop()
+    {
+        _lowerTimer.Stop();
+        _lowerTimer.Start();
+    }
+
+    private void KeepWidgetsOnDesktop()
+    {
+        // While Win+D shows the desktop it is the foreground window; moving any window would cancel it.
+        if (Native.IsDesktop(Native.GetForegroundWindow()))
+            return;
+        // Only move widgets that are not already in the run of widgets right above the desktop.
+        var onDesktop = new HashSet<IntPtr>();
+        var handles = _widgets.Select(w => w.Handle).ToHashSet();
+        for (var h = Native.GetWindow(Native.FindWindow("Progman", null), Native.GW_HWNDPREV);
+             h != IntPtr.Zero && handles.Contains(h);
+             h = Native.GetWindow(h, Native.GW_HWNDPREV))
+            onDesktop.Add(h);
+        foreach (var w in _widgets)
+        {
+            if (!onDesktop.Contains(w.Handle))
+                w.LowerToDesktop();
+        }
+    }
+
+    /// <summary>
+    /// Explorer restarted: the desktop window is new, so widgets are attached to it again, and any
+    /// widget Windows destroyed together with the old desktop is opened again.
+    /// </summary>
+    public async void OnExplorerRestarted()
+    {
+        await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(2)); // let the desktop window appear
+        foreach (var widget in _widgets.ToList())
+        {
+            if (widget.IsGone)
+            {
+                _widgets.Remove(widget);
+                Open(widget.Config);
+            }
+            else
+            {
+                widget.AttachToDesktop();
+            }
+        }
     }
 
     private void Open(WidgetConfig config)

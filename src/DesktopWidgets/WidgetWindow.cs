@@ -36,6 +36,9 @@ public abstract class WidgetWindow : Window
     private IntPtr _hwnd;
     private bool _removing;
 
+    /// <summary>True once the window is gone, also when Windows destroyed it with its owner (Explorer restart).</summary>
+    public bool IsGone { get; private set; }
+
     protected WidgetWindow(WidgetConfig config)
     {
         Config = config;
@@ -97,7 +100,11 @@ public abstract class WidgetWindow : Window
         PreviewMouseWheel += OnMouseWheel;
         SizeChanged += (_, _) => UpdateBackdrop();
         Backdrop.Changed += UpdateBackdrop;
-        Closed += (_, _) => Backdrop.Changed -= UpdateBackdrop;
+        Closed += (_, _) =>
+        {
+            IsGone = true;
+            Backdrop.Changed -= UpdateBackdrop;
+        };
 
         ResetMenu();
         // A context menu closes at once on a window without focus, so the widget has it while the menu is open.
@@ -120,11 +127,37 @@ public abstract class WidgetWindow : Window
     {
         var menu = new ContextMenu();
         menu.Opened += (_, _) => BuildMenu(menu);
-        menu.Closed += (_, _) => Native.SetNoActivate(_hwnd, true);
+        menu.Closed += (_, _) =>
+        {
+            Native.SetNoActivate(_hwnd, true);
+            App.Instance.ScheduleKeepOnDesktop(); // opening the menu raised the widget
+        };
         ContextMenu = menu;
     }
 
     protected virtual void AddMenuItems(ContextMenu menu) { }
+
+    /// <summary>
+    /// Makes the desktop (Progman) the widget's owner. Show desktop (Win+D) raises Progman above all
+    /// windows, and Windows keeps owned windows above their owner, so the widget comes up with it.
+    /// </summary>
+    public void AttachToDesktop()
+    {
+        if (_hwnd == IntPtr.Zero || Preview)
+            return;
+        var progman = Native.FindWindow("Progman", null);
+        if (progman != IntPtr.Zero)
+            Native.SetOwner(_hwnd, progman);
+    }
+
+    internal IntPtr Handle => _hwnd;
+
+    /// <summary>Puts the widget back just above the desktop (the WndProc hook turns HWND_BOTTOM into that).</summary>
+    public void LowerToDesktop()
+    {
+        if (_hwnd != IntPtr.Zero && !Preview && !IsGone)
+            Native.SetWindowPos(_hwnd, Native.HWND_BOTTOM, 0, 0, 0, 0, Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
+    }
 
     /// <summary>Closes the widget for good; any other close request (such as Alt+F4) is ignored.</summary>
     public void Remove()
@@ -165,6 +198,7 @@ public abstract class WidgetWindow : Window
             Topmost = true;
             return;
         }
+        AttachToDesktop();
         Native.SetWindowPos(_hwnd, Native.HWND_BOTTOM, 0, 0, 0, 0,
             Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
     }
@@ -294,15 +328,16 @@ public abstract class WidgetWindow : Window
     }
 
     /// <summary>
-    /// Keeps the widget glued right above the desktop: whenever Windows tries to
-    /// change our z-order (e.g. on click), we put it just above Progman instead.
+    /// Keeps the widget glued right above the desktop: when Windows tries to raise it (e.g. for its
+    /// context menu) or send it to the very bottom, it goes just above Progman instead. Other moves
+    /// are left alone: Windows uses them to keep the widget above its owner, the desktop, on Win+D.
     /// </summary>
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == Native.WM_WINDOWPOSCHANGING && !Preview)
         {
             var pos = Marshal.PtrToStructure<Native.WINDOWPOS>(lParam);
-            if ((pos.flags & Native.SWP_NOZORDER) == 0)
+            if ((pos.flags & Native.SWP_NOZORDER) == 0 && (pos.hwndInsertAfter == IntPtr.Zero || pos.hwndInsertAfter == Native.HWND_BOTTOM))
             {
                 var progman = Native.FindWindow("Progman", null);
                 var above = progman == IntPtr.Zero ? IntPtr.Zero : Native.GetWindow(progman, Native.GW_HWNDPREV);
