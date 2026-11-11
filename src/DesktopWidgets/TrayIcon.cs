@@ -31,6 +31,7 @@ public sealed class TrayIcon : IDisposable
 
     public TrayIcon()
     {
+        RefreshAutostartPath();
         // Hidden popup window that receives the icon's mouse callbacks.
         _window = new HwndSource(new HwndSourceParameters("DesktopWidgetsTray")
         {
@@ -158,6 +159,20 @@ public sealed class TrayIcon : IDisposable
     {
         using var key = Registry.CurrentUser.OpenSubKey(RunKey);
         return key?.GetValue(RunValue) is string;
+    }
+
+    /// <summary>
+    /// Start with Windows stores this exe's path, so after an update (or a move) it pointed to the old copy.
+    /// When it is on, point it at the running exe again. Development builds leave it alone.
+    /// </summary>
+    private static void RefreshAutostartPath()
+    {
+        var path = Environment.ProcessPath;
+        if (path is null || WidgetWindow.Preview || path.Contains(@"\bin\", StringComparison.OrdinalIgnoreCase))
+            return;
+        using var key = Registry.CurrentUser.OpenSubKey(RunKey);
+        if (key?.GetValue(RunValue) is string current && !string.Equals(current, $"\"{path}\"", StringComparison.OrdinalIgnoreCase))
+            SetAutostart(true);
     }
 
     private static void SetAutostart(bool enable)
