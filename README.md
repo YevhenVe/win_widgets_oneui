@@ -16,7 +16,8 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 - **Tint**: one slider from black 50 % through fully transparent (default) to white 50 %.
 - **Menus** follow the Windows light or dark mode.
 - **Text colour**: picked automatically for the tinted background, or set to dark or white manually.
-- **Languages**: English and Ukrainian (Українська), switched live from the tray; the date follows the chosen language.
+- **Languages**: English and Ukrainian (Українська) built in, switched live from the tray; the date follows the chosen language. More languages can be added as files (see [Languages](#languages)).
+- **Start with Windows** three ways: a Startup folder shortcut, the registry Run key or Task Scheduler. If one doesn't work on your PC (some antivirus programs block one of them), pick another.
 - **Lightweight**: about 0 % CPU and ~45 MB RAM while idle.
 
 ## Install
@@ -36,9 +37,32 @@ Samsung One UI–style clock and weather widgets for the Windows 11 desktop: fro
 | Click the clock | Open the calendar (arrows or wheel: change month, click the title: back to today, Esc or click elsewhere: close) |
 | Click the weather widget | Open the Windows Weather app (weather.com if it is not installed) |
 | Right-click a widget | Clock: text size, short format. Weather: refresh, set location. All: scale, lock position, remove widget |
-| Tray icon | Add clock / weather, background (blur, tint, text colour), refresh background, widget shadow, language, weather location, Fahrenheit, start with Windows, exit |
+| Tray icon | Add clock / weather, background (blur, tint, text colour), refresh background, widget shadow, language, weather location, Fahrenheit, start with Windows (off / shortcut / registry / Task Scheduler), exit |
 
 Settings are stored in `%LOCALAPPDATA%\DesktopWidgets\settings.json`.
+
+## Languages
+
+Each language is a JSON file in a `languages` folder next to `DesktopWidgets.exe`. The tray menu lists every file it finds there, each under its own `name`; new files show up the next time you open the menu. English and Ukrainian are also built into the exe, so the app works without the folder, and a file with the same code (`en.json`, `uk.json`) replaces the built-in text.
+
+To add a language, copy `en.json` to a new file named after the language code (e.g. `pl.json`) and translate it:
+
+```json
+{
+  "name": "Polski",
+  "culture": "pl-PL",
+  "strings": {
+    "AddClock": "Dodaj zegar",
+    "BlurAmount": "Rozmycie: {0}%",
+    ...
+  }
+}
+```
+
+- `name`: how the language appears in the menu.
+- `culture`: used for the day and month names on the clock and in the calendar, and for city names in the weather.
+- `{0}`: where the app puts a number or name; keep it in the translation.
+- Strings you leave out are shown in English; a file that isn't valid JSON is skipped.
 
 ## Changelog
 

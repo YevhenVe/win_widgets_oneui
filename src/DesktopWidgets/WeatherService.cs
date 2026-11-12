@@ -74,7 +74,7 @@ public static class WeatherService
     /// </summary>
     private static async Task<string> LocalizeAsync(string city, double lat, double lon)
     {
-        if (city.Length == 0 || Strings.Current == Language.English)
+        if (city.Length == 0 || Strings.Code == "en")
             return city;
         var key = $"{Strings.Code}|{city}";
         if (LocalizedNames.TryGetValue(key, out var cached))

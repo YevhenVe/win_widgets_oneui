@@ -17,9 +17,6 @@ namespace DesktopWidgets;
 /// </summary>
 public sealed class TrayIcon : IDisposable
 {
-    private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string RunValue = "DesktopWidgets";
-
     private const int CallbackMessage = 0x8000 + 1; // WM_APP + 1
     private const int WM_LBUTTONUP = 0x0202;
     private const int WM_RBUTTONUP = 0x0205;
@@ -31,7 +28,7 @@ public sealed class TrayIcon : IDisposable
 
     public TrayIcon()
     {
-        RefreshAutostartPath();
+        Autostart.RefreshPath();
         // Hidden popup window that receives the icon's mouse callbacks.
         _window = new HwndSource(new HwndSourceParameters("DesktopWidgetsTray")
         {
@@ -94,12 +91,15 @@ public sealed class TrayIcon : IDisposable
         Item(Strings.RefreshBackground, () => Backdrop.Rebuild("tray menu"));
         Item(Strings.WidgetShadow, () => App.Instance.SetWidgetShadow(!settings.WidgetShadow), settings.WidgetShadow);
 
-        // Language names stay in their own language so they can be found from either one.
+        // Language names stay in their own language so they can be found from any one.
+        // The folder is read again on every open, so a file dropped in shows up without a restart.
+        Strings.Rescan();
         var language = new MenuItem { Header = Strings.LanguageMenu };
-        foreach (var (value, label) in new[] { (Language.English, "English"), (Language.Ukrainian, "Українська") })
+        var currentLanguage = Strings.CurrentCode;
+        foreach (var lang in Strings.Available)
         {
-            var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = Strings.Current == value };
-            item.Click += (_, _) => App.Instance.SetLanguage(value);
+            var item = new MenuItem { Header = lang.Name, IsCheckable = true, IsChecked = lang.Code == currentLanguage };
+            item.Click += (_, _) => App.Instance.SetLanguage(lang.Code);
             language.Items.Add(item);
         }
         _menu.Items.Add(language);
@@ -111,7 +111,24 @@ public sealed class TrayIcon : IDisposable
             SettingsStore.Save();
             App.Instance.RefreshWeather();
         }, settings.Fahrenheit);
-        Item(Strings.StartWithWindows, ToggleAutostart, IsAutostart());
+        var autostart = new MenuItem { Header = Strings.StartWithWindows };
+        var current = Autostart.Current;
+        foreach (var (method, label) in new[]
+        {
+            (AutostartMethod.Off, Strings.AutostartOff),
+            (AutostartMethod.Shortcut, Strings.AutostartShortcut),
+            (AutostartMethod.Registry, Strings.AutostartRegistry),
+            (AutostartMethod.Task, Strings.AutostartTask),
+        })
+        {
+            var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = current == method };
+            item.Click += (_, _) => Autostart.Set(method);
+            autostart.Items.Add(item);
+            if (method == AutostartMethod.Off)
+                autostart.Items.Add(new Separator());
+        }
+        autostart.IsChecked = current != AutostartMethod.Off;
+        _menu.Items.Add(autostart);
         _menu.Items.Add(new Separator());
         Item(Strings.Exit, () => App.Instance.Shutdown());
     }
@@ -153,107 +170,6 @@ public sealed class TrayIcon : IDisposable
         var item = new MenuItem { Header = header, IsCheckable = isChecked.HasValue, IsChecked = isChecked == true };
         item.Click += (_, _) => action();
         _menu.Items.Add(item);
-    }
-
-    // Start with Windows is a shortcut in the Startup folder. Windows sometimes skipped the old Run registry
-    // entry at sign-in without any error, so that entry is only removed now (versions up to 0.7.0 wrote it).
-    private const string ShortcutName = "Desktop Widgets.lnk";
-    private const string StartupApprovedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder";
-
-    private static string ShortcutPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), ShortcutName);
-
-    /// <summary>On when the shortcut exists and Task Manager has not disabled it (odd first byte = disabled).</summary>
-    private static bool IsAutostart()
-    {
-        if (!File.Exists(ShortcutPath))
-            return false;
-        using var key = Registry.CurrentUser.OpenSubKey(StartupApprovedKey);
-        return key?.GetValue(ShortcutName) is not byte[] { Length: > 0 } state || (state[0] & 1) == 0;
-    }
-
-    /// <summary>
-    /// The shortcut stores this exe's path, so after an update (or a move) it pointed to the old copy.
-    /// When autostart is on (or still uses the old Run entry), point it at the running exe again.
-    /// Development builds leave it alone.
-    /// </summary>
-    private static void RefreshAutostartPath()
-    {
-        var path = Environment.ProcessPath;
-        if (path is null || WidgetWindow.Preview || path.Contains(@"\bin\", StringComparison.OrdinalIgnoreCase))
-            return;
-        try
-        {
-            using (var run = Registry.CurrentUser.OpenSubKey(RunKey))
-            {
-                if (run?.GetValue(RunValue) is string)
-                {
-                    SetAutostart(true);
-                    return;
-                }
-            }
-            if (File.Exists(ShortcutPath) && !string.Equals(ShortcutTarget(), path, StringComparison.OrdinalIgnoreCase))
-                CreateShortcut(path);
-        }
-        catch (Exception)
-        {
-            // Autostart is a convenience; never fail the app start over it.
-        }
-    }
-
-    private static void ToggleAutostart()
-    {
-        try
-        {
-            SetAutostart(!IsAutostart());
-        }
-        catch (Exception)
-        {
-            // Startup folder or COM unavailable: leave the setting as it was.
-        }
-    }
-
-    private static void SetAutostart(bool enable)
-    {
-        using (var run = Registry.CurrentUser.CreateSubKey(RunKey))
-            run.DeleteValue(RunValue, throwOnMissingValue: false);
-        // Clear a Task Manager "disabled" mark so turning it on from the menu really turns it on.
-        using (var approved = Registry.CurrentUser.OpenSubKey(StartupApprovedKey, writable: true))
-            approved?.DeleteValue(ShortcutName, throwOnMissingValue: false);
-
-        if (enable && Environment.ProcessPath is { } path)
-            CreateShortcut(path);
-        else
-            File.Delete(ShortcutPath);
-    }
-
-    private static void CreateShortcut(string target)
-    {
-        dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
-        try
-        {
-            var link = shell.CreateShortcut(ShortcutPath);
-            link.TargetPath = target;
-            link.WorkingDirectory = Path.GetDirectoryName(target);
-            link.Description = "Desktop Widgets";
-            link.Save();
-        }
-        finally
-        {
-            Marshal.FinalReleaseComObject(shell);
-        }
-    }
-
-    private static string? ShortcutTarget()
-    {
-        dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
-        try
-        {
-            return (string?)shell.CreateShortcut(ShortcutPath).TargetPath;
-        }
-        finally
-        {
-            Marshal.FinalReleaseComObject(shell);
-        }
     }
 
     private void Add()

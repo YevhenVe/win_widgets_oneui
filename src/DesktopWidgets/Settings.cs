@@ -40,12 +40,6 @@ public enum TextColor
     White,
 }
 
-public enum Language
-{
-    English,
-    Ukrainian,
-}
-
 public sealed class AppSettings
 {
     public List<WidgetConfig> Widgets { get; set; } = new();
@@ -61,7 +55,7 @@ public sealed class AppSettings
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Theme? Theme { get; set; }
     public TextColor TextColor { get; set; } = TextColor.Auto;
-    public Language? Language { get; set; } // null: follow the Windows display language
+    public string? Language { get; set; } // language file code (en, uk, …); null: follow the Windows display language
     public WeatherSnapshot? LastWeather { get; set; }
 }
 

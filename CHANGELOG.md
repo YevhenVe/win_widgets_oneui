@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 — 2026-11-12
+
+### New
+- Languages are files: every `languages\xx.json` next to the exe appears in the Language menu under its own name. English and Ukrainian stay built in. See README for the file format.
+- Start with Windows is a submenu with three methods: Startup folder shortcut, registry (Run key) or Task Scheduler. If one doesn't work on your PC, for example because an antivirus blocks it, pick another.
+
+### Changed
+- The saved language from earlier versions is kept.
+
 ## 0.7.1 — 2026-11-12
 
 ### Fixed

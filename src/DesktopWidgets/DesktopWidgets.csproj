@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyTitle>Desktop Widgets</AssemblyTitle>
-    <Version>0.7.1</Version>
+    <Version>0.8.0</Version>
     <!-- Idle desktop widget: favour a small footprint over GC throughput. -->
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
@@ -17,6 +17,8 @@
 
   <ItemGroup>
     <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="7" />
+    <!-- Built-in languages; files in a languages folder next to the exe add more or override these. -->
+    <EmbeddedResource Include="Languages\*.json" LogicalName="lang.%(Filename).json" />
   </ItemGroup>
 
 </Project>

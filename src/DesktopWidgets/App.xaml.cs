@@ -158,7 +158,7 @@ public partial class App : Application
         return key?.GetValue("AppsUseLightTheme") is 0;
     }
 
-    public void SetLanguage(Language language)
+    public void SetLanguage(string language)
     {
         SettingsStore.Current.Language = language;
         SettingsStore.Save();
