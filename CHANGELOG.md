@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1 — 2026-11-12
+
+### Fixed
+- Start with Windows works reliably. It now uses a shortcut in the Startup folder, because Windows sometimes skipped the old registry entry at sign-in. Existing setups switch over automatically on first start.
+- After moving or updating the app, Start with Windows points to the copy you run.
+
 ## 0.7.0 — 2026-11-07
 
 ### New

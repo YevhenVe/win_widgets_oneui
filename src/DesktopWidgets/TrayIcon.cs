@@ -111,7 +111,7 @@ public sealed class TrayIcon : IDisposable
             SettingsStore.Save();
             App.Instance.RefreshWeather();
         }, settings.Fahrenheit);
-        Item(Strings.StartWithWindows, () => SetAutostart(!IsAutostart()), IsAutostart());
+        Item(Strings.StartWithWindows, ToggleAutostart, IsAutostart());
         _menu.Items.Add(new Separator());
         Item(Strings.Exit, () => App.Instance.Shutdown());
     }
@@ -155,33 +155,105 @@ public sealed class TrayIcon : IDisposable
         _menu.Items.Add(item);
     }
 
+    // Start with Windows is a shortcut in the Startup folder. Windows sometimes skipped the old Run registry
+    // entry at sign-in without any error, so that entry is only removed now (versions up to 0.7.0 wrote it).
+    private const string ShortcutName = "Desktop Widgets.lnk";
+    private const string StartupApprovedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder";
+
+    private static string ShortcutPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), ShortcutName);
+
+    /// <summary>On when the shortcut exists and Task Manager has not disabled it (odd first byte = disabled).</summary>
     private static bool IsAutostart()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKey);
-        return key?.GetValue(RunValue) is string;
+        if (!File.Exists(ShortcutPath))
+            return false;
+        using var key = Registry.CurrentUser.OpenSubKey(StartupApprovedKey);
+        return key?.GetValue(ShortcutName) is not byte[] { Length: > 0 } state || (state[0] & 1) == 0;
     }
 
     /// <summary>
-    /// Start with Windows stores this exe's path, so after an update (or a move) it pointed to the old copy.
-    /// When it is on, point it at the running exe again. Development builds leave it alone.
+    /// The shortcut stores this exe's path, so after an update (or a move) it pointed to the old copy.
+    /// When autostart is on (or still uses the old Run entry), point it at the running exe again.
+    /// Development builds leave it alone.
     /// </summary>
     private static void RefreshAutostartPath()
     {
         var path = Environment.ProcessPath;
         if (path is null || WidgetWindow.Preview || path.Contains(@"\bin\", StringComparison.OrdinalIgnoreCase))
             return;
-        using var key = Registry.CurrentUser.OpenSubKey(RunKey);
-        if (key?.GetValue(RunValue) is string current && !string.Equals(current, $"\"{path}\"", StringComparison.OrdinalIgnoreCase))
-            SetAutostart(true);
+        try
+        {
+            using (var run = Registry.CurrentUser.OpenSubKey(RunKey))
+            {
+                if (run?.GetValue(RunValue) is string)
+                {
+                    SetAutostart(true);
+                    return;
+                }
+            }
+            if (File.Exists(ShortcutPath) && !string.Equals(ShortcutTarget(), path, StringComparison.OrdinalIgnoreCase))
+                CreateShortcut(path);
+        }
+        catch (Exception)
+        {
+            // Autostart is a convenience; never fail the app start over it.
+        }
+    }
+
+    private static void ToggleAutostart()
+    {
+        try
+        {
+            SetAutostart(!IsAutostart());
+        }
+        catch (Exception)
+        {
+            // Startup folder or COM unavailable: leave the setting as it was.
+        }
     }
 
     private static void SetAutostart(bool enable)
     {
-        using var key = Registry.CurrentUser.CreateSubKey(RunKey);
-        if (enable)
-            key.SetValue(RunValue, $"\"{Environment.ProcessPath}\"");
+        using (var run = Registry.CurrentUser.CreateSubKey(RunKey))
+            run.DeleteValue(RunValue, throwOnMissingValue: false);
+        // Clear a Task Manager "disabled" mark so turning it on from the menu really turns it on.
+        using (var approved = Registry.CurrentUser.OpenSubKey(StartupApprovedKey, writable: true))
+            approved?.DeleteValue(ShortcutName, throwOnMissingValue: false);
+
+        if (enable && Environment.ProcessPath is { } path)
+            CreateShortcut(path);
         else
-            key.DeleteValue(RunValue, throwOnMissingValue: false);
+            File.Delete(ShortcutPath);
+    }
+
+    private static void CreateShortcut(string target)
+    {
+        dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
+        try
+        {
+            var link = shell.CreateShortcut(ShortcutPath);
+            link.TargetPath = target;
+            link.WorkingDirectory = Path.GetDirectoryName(target);
+            link.Description = "Desktop Widgets";
+            link.Save();
+        }
+        finally
+        {
+            Marshal.FinalReleaseComObject(shell);
+        }
+    }
+
+    private static string? ShortcutTarget()
+    {
+        dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
+        try
+        {
+            return (string?)shell.CreateShortcut(ShortcutPath).TargetPath;
+        }
+        finally
+        {
+            Marshal.FinalReleaseComObject(shell);
+        }
     }
 
     private void Add()
