@@ -201,6 +201,13 @@ public partial class App : Application
             w.UpdateBackdrop();
     }
 
+    /// <summary>Shows the cached weather again, e.g. in the other temperature unit.</summary>
+    public void RerenderWeather()
+    {
+        foreach (var w in _widgets.OfType<WeatherWidget>())
+            w.Rerender();
+    }
+
     public async void RefreshWeather()
     {
         foreach (var w in _widgets.OfType<WeatherWidget>().ToList())

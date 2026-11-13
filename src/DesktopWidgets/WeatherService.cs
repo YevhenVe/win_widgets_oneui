@@ -23,10 +23,9 @@ public static class WeatherService
     public static async Task<WeatherSnapshot> FetchAsync(AppSettings settings)
     {
         var (lat, lon, city) = await ResolveLocationAsync(settings.City);
-        var unit = settings.Fahrenheit ? "fahrenheit" : "celsius";
         var url = string.Create(CultureInfo.InvariantCulture,
             $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}" +
-            $"&current=temperature_2m,weather_code,is_day&temperature_unit={unit}&timezone=auto");
+            $"&current=temperature_2m,weather_code,is_day&temperature_unit=celsius&timezone=auto");
 
         using var doc = JsonDocument.Parse(await Http.GetStringAsync(url));
         var current = doc.RootElement.GetProperty("current");
@@ -37,7 +36,8 @@ public static class WeatherService
             city,
             DateTime.Now,
             lat,
-            lon);
+            lon,
+            Celsius: true);
     }
 
     private static async Task<(double Lat, double Lon, string City)> ResolveLocationAsync(string? city)

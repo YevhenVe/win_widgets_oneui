@@ -21,8 +21,16 @@ public sealed class WidgetConfig
     public double ShortDateSize { get; set; } = 27;
 }
 
+/// <summary>
+/// Last fetched weather. <see cref="Temperature"/> is in Celsius when <see cref="Celsius"/> is set (0.8.1+);
+/// older versions stored it in the unit chosen at the time.
+/// </summary>
 public sealed record WeatherSnapshot(double Temperature, int Code, bool IsDay, string City, DateTime FetchedAt,
-    double Latitude = 0, double Longitude = 0);
+    double Latitude = 0, double Longitude = 0, bool Celsius = false)
+{
+    /// <summary>The temperature in the unit chosen now, so switching units needs no new download.</summary>
+    public double Display(bool fahrenheit) => Celsius && fahrenheit ? Temperature * 9 / 5 + 32 : Temperature;
+}
 
 /// <summary>Replaced by <see cref="AppSettings.Tint"/>; only read from old settings files.</summary>
 public enum Theme

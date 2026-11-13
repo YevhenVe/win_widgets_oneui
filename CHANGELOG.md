@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1 — 2026-11-13
+
+### Fixed
+- Use Fahrenheit switches the temperature at once, even when the weather can't be downloaded at that moment. Before, the widget kept the old number if the new download failed.
+
 ## 0.8.0 — 2026-11-12
 
 ### New

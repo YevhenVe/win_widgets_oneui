@@ -136,7 +136,7 @@ public sealed class WeatherWidget : WidgetWindow
         }
     }
 
-    /// <summary>Re-renders the cached weather after a language switch (texts and tooltip).</summary>
+    /// <summary>Re-renders the cached weather after a language or unit switch (texts, temperature and tooltip).</summary>
     public void Rerender() => Render(SettingsStore.Current.LastWeather);
 
     private void Render(WeatherSnapshot? s)
@@ -149,7 +149,7 @@ public sealed class WeatherWidget : WidgetWindow
             return;
         }
 
-        _temp.Text = $"{Math.Round(s.Temperature):0}°";
+        _temp.Text = $"{Math.Round(s.Display(SettingsStore.Current.Fahrenheit)):0}°";
         _city.Text = s.City;
         _icon.Content = WeatherIcons.Create(s.Code, s.IsDay, 76);
         ToolTip = Strings.Updated(s.FetchedAt);

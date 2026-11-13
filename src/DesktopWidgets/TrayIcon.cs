@@ -109,7 +109,10 @@ public sealed class TrayIcon : IDisposable
         {
             settings.Fahrenheit = !settings.Fahrenheit;
             SettingsStore.Save();
-            App.Instance.RefreshWeather();
+            App.Instance.RerenderWeather();
+            // Weather saved by 0.8.0 and older is in the old unit and can't be converted; fetch it again.
+            if (settings.LastWeather is { Celsius: false })
+                App.Instance.RefreshWeather();
         }, settings.Fahrenheit);
         var autostart = new MenuItem { Header = Strings.StartWithWindows };
         var current = Autostart.Current;
