@@ -1,4 +1,4 @@
-# win_widgets_oneui
+# PillsWidgets
 
 Samsung One UI–style clock and weather widgets for the Windows 11 desktop: frosted, translucent pills that sit right on top of your wallpaper, can be dragged anywhere and scaled freely.
 

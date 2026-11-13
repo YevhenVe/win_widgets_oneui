@@ -7,7 +7,9 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyTitle>Desktop Widgets</AssemblyTitle>
+    <AssemblyTitle>PillsWidgets</AssemblyTitle>
+    <Product>PillsWidgets</Product>
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <Version>0.8.1</Version>
     <!-- Idle desktop widget: favour a small footprint over GC throughput. -->
     <ServerGarbageCollection>false</ServerGarbageCollection>

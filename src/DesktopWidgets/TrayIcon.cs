@@ -133,6 +133,7 @@ public sealed class TrayIcon : IDisposable
         autostart.IsChecked = current != AutostartMethod.Off;
         _menu.Items.Add(autostart);
         _menu.Items.Add(new Separator());
+        Item("About", AboutWindow.ShowOnce); // English in every language, like the About box itself
         Item(Strings.Exit, () => App.Instance.Shutdown());
     }
 
@@ -181,7 +182,7 @@ public sealed class TrayIcon : IDisposable
         data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
         data.uCallbackMessage = CallbackMessage;
         data.hIcon = _hIcon;
-        data.szTip = "Desktop Widgets";
+        data.szTip = "PillsWidgets";
         Shell_NotifyIcon(NIM_ADD, ref data);
     }
 
@@ -192,31 +193,11 @@ public sealed class TrayIcon : IDisposable
         uID = 1,
     };
 
-    /// <summary>Same motif as the widgets: white clock face on a blue disc.</summary>
+    /// <summary>The app icon at the notification area's own size, so it is drawn sharp rather than scaled down.</summary>
     private static IntPtr DrawIcon()
     {
-        const int size = 32;
-        var visual = new DrawingVisual();
-        using (var dc = visual.RenderOpen())
-        {
-            dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0x3F, 0x7F, 0xDB)), null, new Point(16, 16), 15, 15);
-            dc.DrawEllipse(Brushes.White, null, new Point(16, 16), 9, 9);
-            var hand = new Pen(new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30)), 2.4)
-            {
-                StartLineCap = PenLineCap.Round,
-                EndLineCap = PenLineCap.Round,
-            };
-            dc.DrawLine(hand, new Point(16, 16), new Point(16, 10));
-            dc.DrawLine(hand, new Point(16, 16), new Point(21, 18));
-        }
-        var bitmap = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(visual);
-
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using var stream = new MemoryStream();
-        encoder.Save(stream);
-        var png = stream.ToArray();
+        var size = Math.Max(16, GetSystemMetrics(SM_CXSMICON));
+        var png = AppIcon.Png(size);
         return CreateIconFromResourceEx(png, (uint)png.Length, true, 0x00030000, size, size, 0);
     }
 
@@ -265,4 +246,9 @@ public sealed class TrayIcon : IDisposable
 
     [DllImport("user32.dll")]
     private static extern bool DestroyIcon(IntPtr hIcon);
+
+    private const int SM_CXSMICON = 49;
+
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int index);
 }

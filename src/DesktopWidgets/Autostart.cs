@@ -143,7 +143,7 @@ public static class Autostart
             var link = shell.CreateShortcut(ShortcutPath);
             link.TargetPath = target;
             link.WorkingDirectory = Path.GetDirectoryName(target);
-            link.Description = "Desktop Widgets";
+            link.Description = "PillsWidgets";
             link.Save();
         }
         finally
@@ -222,7 +222,7 @@ public static class Autostart
         var xml = $"""
             <?xml version="1.0" encoding="UTF-16"?>
             <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-              <RegistrationInfo><Description>Starts Desktop Widgets when you sign in.</Description></RegistrationInfo>
+              <RegistrationInfo><Description>Starts PillsWidgets when you sign in.</Description></RegistrationInfo>
               <Triggers><LogonTrigger><Enabled>true</Enabled><UserId>{user}</UserId><Delay>PT5S</Delay></LogonTrigger></Triggers>
               <Principals><Principal id="Author"><UserId>{user}</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
               <Settings>
