@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.8.1 — 2026-11-13
+## 1.0.0 — 2026-11-13
 
 ### New
 - The app is now called PillsWidgets and has its own icon (a two-tone capsule), shown in the tray, in Explorer and in Task Manager.
 - About in the tray menu: version, links to GitHub, releases and the changelog, and data credits.
 
 ### Fixed
-- A city set by hand keeps working after switching the language. It was searched again by its name in the new language, so "Харків" was not found in Russian and "Харьков" in Ukrainian found another town. The city is now looked up once, kept by its coordinates, and only its name follows the language.
+- A city set by hand keeps working after switching the language. It used to be searched again by name in the new language, where it could be missing or match a different town with a similar name. The city is now looked up once and kept by its location; only its name follows the language.
 - The weather icon and text are centred vertically in the widget. Rain, snow and storm icons sat low, and the text sat a little below the middle.
 - Use Fahrenheit switches the temperature at once, even when the weather can't be downloaded at that moment. Before, the widget kept the old number if the new download failed.
 
