@@ -3,6 +3,7 @@
 ## 0.8.1 — 2026-11-13
 
 ### Fixed
+- A city set by hand keeps working after switching the language. It was searched again by its name in the new language, so "Харків" was not found in Russian and "Харьков" in Ukrainian found another town. The city is now looked up once, kept by its coordinates, and only its name follows the language.
 - Use Fahrenheit switches the temperature at once, even when the weather can't be downloaded at that moment. Before, the widget kept the old number if the new download failed.
 
 ## 0.8.0 — 2026-11-12

@@ -21,6 +21,9 @@ public sealed class WidgetConfig
     public double ShortDateSize { get; set; } = 27;
 }
 
+/// <summary>The typed city as found by the geocoder; reused while <see cref="Query"/> matches the city setting.</summary>
+public sealed record CityPlace(string Query, int Id, double Latitude, double Longitude);
+
 /// <summary>
 /// Last fetched weather. <see cref="Temperature"/> is in Celsius when <see cref="Celsius"/> is set (0.8.1+);
 /// older versions stored it in the unit chosen at the time.
@@ -52,6 +55,9 @@ public sealed class AppSettings
 {
     public List<WidgetConfig> Widgets { get; set; } = new();
     public string? City { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CityPlace? CityPlace { get; set; }
     public bool Fahrenheit { get; set; }
     public int BlurAmount { get; set; } = 35; // 0 (off, the wallpaper shows as is) .. 100
 

@@ -261,6 +261,7 @@ public partial class App : Application
         if (dialog.ShowDialog() != true)
             return;
         SettingsStore.Current.City = string.IsNullOrWhiteSpace(box.Text) ? null : box.Text.Trim();
+        SettingsStore.Current.CityPlace = null; // look the new name up again
         SettingsStore.Save();
         RefreshWeather();
     }

@@ -22,7 +22,7 @@ public static class WeatherService
 
     public static async Task<WeatherSnapshot> FetchAsync(AppSettings settings)
     {
-        var (lat, lon, city) = await ResolveLocationAsync(settings.City);
+        var (lat, lon, city) = await ResolveLocationAsync(settings);
         var url = string.Create(CultureInfo.InvariantCulture,
             $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}" +
             $"&current=temperature_2m,weather_code,is_day&temperature_unit=celsius&timezone=auto");
@@ -40,10 +40,18 @@ public static class WeatherService
             Celsius: true);
     }
 
-    private static async Task<(double Lat, double Lon, string City)> ResolveLocationAsync(string? city)
+    /// <summary>
+    /// A typed city is looked up once and kept as a place id with coordinates, so switching the UI language
+    /// can't lose it or move it to a namesake; only its name is fetched again, in the current language.
+    /// </summary>
+    private static async Task<(double Lat, double Lon, string City)> ResolveLocationAsync(AppSettings settings)
     {
-        if (!string.IsNullOrWhiteSpace(city))
-            return await GeocodeAsync(city);
+        if (settings.City is { } city && !string.IsNullOrWhiteSpace(city))
+        {
+            var place = settings.CityPlace is { } saved && saved.Query == city ? saved : await FindPlaceAsync(city);
+            settings.CityPlace = place;
+            return (place.Latitude, place.Longitude, await PlaceNameAsync(place.Id) ?? city);
+        }
 
         var (lat, lon, name) = await LocateByIpAsync();
         return (lat, lon, await LocalizeAsync(name, lat, lon));
@@ -117,14 +125,54 @@ public static class WeatherService
         return 6371 * 2 * Math.Asin(Math.Sqrt(a));
     }
 
-    public static async Task<(double Lat, double Lon, string City)> GeocodeAsync(string city)
+    /// <summary>
+    /// The geocoder only matches names in the requested language (and English), so "Харків" is not found in
+    /// Russian and "Харьков" in Ukrainian finds another town. Tries the UI language, English and every installed
+    /// language, and prefers a result whose name is exactly what was typed.
+    /// </summary>
+    private static async Task<CityPlace> FindPlaceAsync(string city)
     {
-                var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(city.Trim())}&count=1&language={Strings.Code}";
-        using var doc = JsonDocument.Parse(await Http.GetStringAsync(url));
-        if (!doc.RootElement.TryGetProperty("results", out var results) || results.GetArrayLength() == 0)
-            throw new InvalidOperationException(Strings.CityNotFound(city));
-        var r = results[0];
-        return (r.GetProperty("latitude").GetDouble(), r.GetProperty("longitude").GetDouble(),
-            r.GetProperty("name").GetString() ?? city);
+        var query = city.Trim();
+        var languages = new List<string> { Strings.Code, "en" };
+        foreach (var lang in Strings.Available)
+        {
+            if (!languages.Contains(lang.Code))
+                languages.Add(lang.Code);
+        }
+
+        CityPlace? first = null;
+        foreach (var lang in languages)
+        {
+            var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(query)}&count=1&language={lang}";
+            using var doc = JsonDocument.Parse(await Http.GetStringAsync(url));
+            if (!doc.RootElement.TryGetProperty("results", out var results) || results.GetArrayLength() == 0)
+                continue;
+            var r = results[0];
+            var place = new CityPlace(city, r.GetProperty("id").GetInt32(), r.GetProperty("latitude").GetDouble(), r.GetProperty("longitude").GetDouble());
+            if (string.Equals(r.GetProperty("name").GetString(), query, StringComparison.CurrentCultureIgnoreCase))
+                return place;
+            first ??= place;
+        }
+        return first ?? throw new InvalidOperationException(Strings.CityNotFound(city));
+    }
+
+    /// <summary>The place's name in the UI language, or null to show the city as typed.</summary>
+    private static async Task<string?> PlaceNameAsync(int id)
+    {
+        var key = $"{Strings.Code}|#{id}";
+        if (LocalizedNames.TryGetValue(key, out var cached))
+            return cached;
+        try
+        {
+            var url = string.Create(CultureInfo.InvariantCulture, $"https://geocoding-api.open-meteo.com/v1/get?id={id}&language={Strings.Code}");
+            using var doc = JsonDocument.Parse(await Http.GetStringAsync(url));
+            if (doc.RootElement.TryGetProperty("name", out var name) && name.GetString() is { Length: > 0 } text)
+                return LocalizedNames[key] = text;
+        }
+        catch
+        {
+            // Try again on the next refresh.
+        }
+        return null;
     }
 }
