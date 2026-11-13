@@ -66,7 +66,21 @@ public static class WeatherIcons
                 });
                 break;
         }
+        CentreVertically(c);
         return new Viewbox { Width = size, Height = size, Child = c };
+    }
+
+    /// <summary>
+    /// The drawings sit differently in their 100×100 box (rain drops hang below the cloud, a sun sits high),
+    /// so shift each one until what is actually drawn is centred vertically, in line with the text beside it.
+    /// </summary>
+    private static void CentreVertically(Canvas c)
+    {
+        c.Measure(new Size(100, 100));
+        c.Arrange(new Rect(0, 0, 100, 100));
+        var ink = VisualTreeHelper.GetDescendantBounds(c);
+        if (!ink.IsEmpty)
+            c.RenderTransform = new TranslateTransform(0, 50 - (ink.Top + ink.Bottom) / 2);
     }
 
     private static Brush White(byte alpha) => new SolidColorBrush(Color.FromArgb(alpha, 0xFF, 0xFF, 0xFF));

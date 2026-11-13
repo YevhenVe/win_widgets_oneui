@@ -25,12 +25,15 @@ public sealed class WeatherWidget : WidgetWindow
         TextTrimming = TextTrimming.CharacterEllipsis,
         MaxWidth = 110,
     };
+    private readonly StackPanel _text = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(22, 0, 0, 0) };
     private readonly DispatcherTimer _refresh = new() { Interval = TimeSpan.FromMinutes(20) };
     private bool _loading;
 
     public WeatherWidget(WidgetConfig config) : base(config)
     {
         _icon.Effect = GlyphShadow();
+        _text.Children.Add(_temp);
+        _text.Children.Add(_city);
         SetPillContent(new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -38,12 +41,7 @@ public sealed class WeatherWidget : WidgetWindow
             Children =
             {
                 _icon,
-                new StackPanel
-                {
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(22, 0, 0, 0),
-                    Children = { _temp, _city },
-                },
+                _text,
             },
         });
 
@@ -146,6 +144,7 @@ public sealed class WeatherWidget : WidgetWindow
             _temp.Text = "--°";
             _city.Text = Strings.Loading;
             _icon.Content = WeatherIcons.Create(0, true, 76);
+            CentreText();
             return;
         }
 
@@ -153,5 +152,30 @@ public sealed class WeatherWidget : WidgetWindow
         _city.Text = s.City;
         _icon.Content = WeatherIcons.Create(s.Code, s.IsDay, 76);
         ToolTip = Strings.Updated(s.FetchedAt);
+        CentreText();
+    }
+
+    /// <summary>
+    /// A text line keeps more empty room above the digits than below the city name, so the letters sat
+    /// below the middle of the pill. Shifts the two lines (without changing the layout) until the letters
+    /// themselves are centred, measured from the actual text.
+    /// </summary>
+    private void CentreText()
+    {
+        var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        (double Height, Rect Ink) Measure(TextBlock block)
+        {
+            var text = new FormattedText(block.Text.Length > 0 ? block.Text : " ", CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                new Typeface(block.FontFamily, block.FontStyle, block.FontWeight, block.FontStretch), block.FontSize, Brushes.White, dpi);
+            return (text.Height, text.BuildGeometry(new Point(0, 0)).Bounds);
+        }
+
+        var temp = Measure(_temp);
+        var city = Measure(_city);
+        var cityTop = _temp.Margin.Top + temp.Height + _temp.Margin.Bottom;
+        var height = cityTop + city.Height;
+        var inkTop = _temp.Margin.Top + temp.Ink.Top;
+        var inkBottom = city.Ink.IsEmpty ? _temp.Margin.Top + temp.Ink.Bottom : cityTop + city.Ink.Bottom;
+        _text.RenderTransform = new TranslateTransform(0, Math.Round(height / 2 - (inkTop + inkBottom) / 2));
     }
 }
