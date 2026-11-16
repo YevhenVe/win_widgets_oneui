@@ -324,8 +324,9 @@ public partial class App : Application
         };
         _widgets.Add(widget);
         widget.Show();
-        // Showing a window can put it on top of everything; the start-up check does this for the first
-        // widgets, a widget added later needs it too.
+        // Showing a window puts it on top of everything. Lower it straight away, before it is drawn: the
+        // delayed check below skips while the desktop has focus, which it often has right after the tray menu.
+        widget.LowerToDesktop();
         ScheduleKeepOnDesktop();
     }
 }
