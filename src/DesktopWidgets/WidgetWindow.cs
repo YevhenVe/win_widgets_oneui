@@ -356,7 +356,7 @@ public abstract class WidgetWindow : Window
             if ((pos.flags & Native.SWP_NOZORDER) == 0 && (pos.hwndInsertAfter == IntPtr.Zero || pos.hwndInsertAfter == Native.HWND_BOTTOM))
             {
                 var progman = Native.FindWindow("Progman", null);
-                var above = progman == IntPtr.Zero ? IntPtr.Zero : Native.GetWindow(progman, Native.GW_HWNDPREV);
+                var above = progman == IntPtr.Zero ? IntPtr.Zero : Native.DesktopSlot(progman);
                 if (above == hwnd)
                     pos.flags |= Native.SWP_NOZORDER;
                 else

@@ -127,6 +127,43 @@ internal static class Native
         return name.ToString() is "Progman" or "WorkerW";
     }
 
+    private const long WS_EX_TOPMOST = 0x8;
+
+    public static bool IsTopmost(IntPtr hwnd) => (GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64() & WS_EX_TOPMOST) != 0;
+
+    private const uint GW_HWNDNEXT = 2;
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
+    /// <summary>
+    /// The window to place a widget under so it sits just above the desktop: the lowest normal window above
+    /// Progman whose next window down is normal too. Some apps (Bambu Studio, for one) leave hidden
+    /// "always on top" windows right above the desktop; Windows moves a normal window placed next to one
+    /// of those to the top of all normal windows, which put the widgets over every app.
+    /// </summary>
+    public static IntPtr DesktopSlot(IntPtr progman)
+    {
+        for (var h = GetWindow(progman, GW_HWNDPREV); h != IntPtr.Zero; h = GetWindow(h, GW_HWNDPREV))
+        {
+            if (IsTopmost(h))
+                continue;
+            var next = GetWindow(h, GW_HWNDNEXT);
+            if (next == progman || !IsTopmost(next))
+                return h;
+        }
+        return IntPtr.Zero;
+    }
+
+    /// <summary>The next window up that is visible and not always on top (hidden and topmost windows don't cover widgets).</summary>
+    public static IntPtr VisibleNormalWindowAbove(IntPtr window)
+    {
+        var h = GetWindow(window, GW_HWNDPREV);
+        while (h != IntPtr.Zero && (IsTopmost(h) || !IsWindowVisible(h)))
+            h = GetWindow(h, GW_HWNDPREV);
+        return h;
+    }
+
     private const int GWLP_HWNDPARENT = -8;
 
     /// <summary>Sets a top-level window's owner; Windows keeps owned windows above their owner.</summary>

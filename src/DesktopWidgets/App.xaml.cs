@@ -280,11 +280,12 @@ public partial class App : Application
         var handles = _widgets.Select(w => w.Handle).ToHashSet();
         if (Native.IsDesktop(foreground) || handles.Contains(foreground))
             return;
-        // Only move widgets that are not already in the run of widgets right above the desktop.
+        // Only move widgets that are not already under every visible app window
+        // (hidden and always-on-top windows in between don't count, see Native.DesktopSlot).
         var onDesktop = new HashSet<IntPtr>();
-        for (var h = Native.GetWindow(Native.FindWindow("Progman", null), Native.GW_HWNDPREV);
+        for (var h = Native.VisibleNormalWindowAbove(Native.FindWindow("Progman", null));
              h != IntPtr.Zero && handles.Contains(h);
-             h = Native.GetWindow(h, Native.GW_HWNDPREV))
+             h = Native.VisibleNormalWindowAbove(h))
             onDesktop.Add(h);
         foreach (var w in _widgets)
         {
