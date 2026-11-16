@@ -353,7 +353,9 @@ public abstract class WidgetWindow : Window
         if (msg == Native.WM_WINDOWPOSCHANGING && !Preview)
         {
             var pos = Marshal.PtrToStructure<Native.WINDOWPOS>(lParam);
-            if ((pos.flags & Native.SWP_NOZORDER) == 0 && (pos.hwndInsertAfter == IntPtr.Zero || pos.hwndInsertAfter == Native.HWND_BOTTOM))
+            // Top, bottom and "top of the normal windows" all mean "just above the desktop" for a widget.
+            if ((pos.flags & Native.SWP_NOZORDER) == 0 &&
+                (pos.hwndInsertAfter == IntPtr.Zero || pos.hwndInsertAfter == Native.HWND_BOTTOM || pos.hwndInsertAfter == Native.HWND_NOTOPMOST))
             {
                 var progman = Native.FindWindow("Progman", null);
                 var above = progman == IntPtr.Zero ? IntPtr.Zero : Native.DesktopSlot(progman);

@@ -29,6 +29,7 @@ internal static class Native
     public const uint GW_HWNDPREV = 3;
 
     public static readonly IntPtr HWND_BOTTOM = new(1);
+    public static readonly IntPtr HWND_NOTOPMOST = new(-2);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct WINDOWPOS

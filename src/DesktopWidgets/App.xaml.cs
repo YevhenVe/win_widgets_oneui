@@ -324,5 +324,8 @@ public partial class App : Application
         };
         _widgets.Add(widget);
         widget.Show();
+        // Showing a window can put it on top of everything; the start-up check does this for the first
+        // widgets, a widget added later needs it too.
+        ScheduleKeepOnDesktop();
     }
 }

@@ -8,6 +8,7 @@
 
 ### Fixed
 - Widgets no longer jump above all windows while some apps are open. Apps that keep hidden always-on-top windows (Bambu Studio, for example) made Windows put the widgets on top instead of just above the desktop.
+- A newly added widget no longer appears on top of all windows; it goes under your windows right away, like the others.
 - A city set by hand keeps working after switching the language. It used to be searched again by name in the new language, where it could be missing or match a different town with a similar name. The city is now looked up once and kept by its location; only its name follows the language.
 - The weather icon and text are centred vertically in the widget. Rain, snow and storm icons sat low, and the text sat a little below the middle.
 - Use Fahrenheit switches the temperature at once, even when the weather can't be downloaded at that moment. Before, the widget kept the old number if the new download failed.
